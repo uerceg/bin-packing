@@ -3,7 +3,7 @@
 //  BinPacking
 //
 //  Created by Ugljesa Erceg on 5/15/12.
-//  Copyright (c) 2012 Ugljesa Erceg. All rights reserved.
+//  Open Source project
 //
 
 #import "BinPackingFactory1D.h"

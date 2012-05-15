@@ -11,6 +11,7 @@
 		9D2FF31B1562877600AE5072 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D2FF31A1562877600AE5072 /* main.m */; };
 		9D2FF31F1562877600AE5072 /* BinPackingProject.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9D2FF31E1562877600AE5072 /* BinPackingProject.1 */; };
 		9D2FF327156287DC00AE5072 /* BinPackingFactory1D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */; };
+		9D2FF32D15628C8700AE5072 /* GeneticAlgorithmFactory1D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D2FF32C15628C8700AE5072 /* GeneticAlgorithmFactory1D.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -34,6 +35,8 @@
 		9D2FF31E1562877600AE5072 /* BinPackingProject.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = BinPackingProject.1; sourceTree = "<group>"; };
 		9D2FF325156287DC00AE5072 /* BinPackingFactory1D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BinPackingFactory1D.h; sourceTree = "<group>"; };
 		9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BinPackingFactory1D.m; sourceTree = "<group>"; };
+		9D2FF32B15628C8700AE5072 /* GeneticAlgorithmFactory1D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GeneticAlgorithmFactory1D.h; sourceTree = "<group>"; };
+		9D2FF32C15628C8700AE5072 /* GeneticAlgorithmFactory1D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneticAlgorithmFactory1D.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +84,8 @@
 				9D2FF31C1562877600AE5072 /* Supporting Files */,
 				9D2FF325156287DC00AE5072 /* BinPackingFactory1D.h */,
 				9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */,
+				9D2FF32B15628C8700AE5072 /* GeneticAlgorithmFactory1D.h */,
+				9D2FF32C15628C8700AE5072 /* GeneticAlgorithmFactory1D.m */,
 			);
 			path = BinPackingProject;
 			sourceTree = "<group>";
@@ -145,6 +150,7 @@
 			files = (
 				9D2FF31B1562877600AE5072 /* main.m in Sources */,
 				9D2FF327156287DC00AE5072 /* BinPackingFactory1D.m in Sources */,
+				9D2FF32D15628C8700AE5072 /* GeneticAlgorithmFactory1D.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
