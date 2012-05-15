@@ -10,6 +10,7 @@
 		9D2FF3181562877600AE5072 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9D2FF3171562877600AE5072 /* Foundation.framework */; };
 		9D2FF31B1562877600AE5072 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D2FF31A1562877600AE5072 /* main.m */; };
 		9D2FF31F1562877600AE5072 /* BinPackingProject.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9D2FF31E1562877600AE5072 /* BinPackingProject.1 */; };
+		9D2FF327156287DC00AE5072 /* BinPackingFactory1D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,6 +32,8 @@
 		9D2FF31A1562877600AE5072 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		9D2FF31D1562877600AE5072 /* BinPackingProject-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "BinPackingProject-Prefix.pch"; sourceTree = "<group>"; };
 		9D2FF31E1562877600AE5072 /* BinPackingProject.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = BinPackingProject.1; sourceTree = "<group>"; };
+		9D2FF325156287DC00AE5072 /* BinPackingFactory1D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BinPackingFactory1D.h; sourceTree = "<group>"; };
+		9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BinPackingFactory1D.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +79,8 @@
 				9D2FF31A1562877600AE5072 /* main.m */,
 				9D2FF31E1562877600AE5072 /* BinPackingProject.1 */,
 				9D2FF31C1562877600AE5072 /* Supporting Files */,
+				9D2FF325156287DC00AE5072 /* BinPackingFactory1D.h */,
+				9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */,
 			);
 			path = BinPackingProject;
 			sourceTree = "<group>";
@@ -139,6 +144,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9D2FF31B1562877600AE5072 /* main.m in Sources */,
+				9D2FF327156287DC00AE5072 /* BinPackingFactory1D.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

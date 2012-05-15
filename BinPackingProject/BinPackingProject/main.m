@@ -1,22 +1,34 @@
 //
 //  main.m
-//  BinPackingProject
+//  BinPacking
 //
 //  Created by Ugljesa Erceg on 5/15/12.
-//  Copyright (c) 2012 __MyCompanyName__. All rights reserved.
+//  Copyright (c) 2012 Ugljesa Erceg. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
+#import "BinPackingFactory1D.h"
 
 int main(int argc, const char * argv[])
 {
-
+    
     @autoreleasepool {
         
-        // insert code here...
-        NSLog(@"Hello, World!");
+        NSMutableArray * inputItems = [NSMutableArray new];
+        [inputItems addObject:[NSNumber numberWithFloat:0.1f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.5f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.4f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.7f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.1f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.3f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.9f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.2f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.8f]];
+        BinPackingFactory1D * binPackingFactory1D = [[BinPackingFactory1D alloc] initWithItemArray:1.0f];
         
+        // Write output information how many beans was used for packing
+        NSLog(@"Number of used bins: %d", [binPackingFactory1D detailSearchAlgorithm:inputItems]);
     }
+    
     return 0;
 }
-
