@@ -6,13 +6,16 @@
 //  Open Source project
 //
 
-#import <Foundation/Foundation.h>
-
 @interface GeneticAlgorithmFactory1D : NSObject
+
+@property (nonatomic) int lowestCost;
+
+- (id) initWithItemArray:(NSMutableArray *)itemsArray:(int)numberOfUnits;
 
 - (void) generateInitialPopulation;
 - (void) mate;
-- (void) mutate;
-- (void) calculateGenerationCost;
+- (void) generationSwap;
+- (void) mutate:(int)mutationFactorPercentage;
+- (void) calculateGenerationCost:(int (^) (NSMutableArray *)) fitnessFunction;
 
 @end

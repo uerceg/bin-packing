@@ -24,10 +24,10 @@ int main(int argc, const char * argv[])
         [inputItems addObject:[NSNumber numberWithFloat:0.9f]];
         [inputItems addObject:[NSNumber numberWithFloat:0.2f]];
         [inputItems addObject:[NSNumber numberWithFloat:0.8f]];
-        BinPackingFactory1D * binPackingFactory1D = [[BinPackingFactory1D alloc] initWithItemArray:1.0f];
+        BinPackingFactory1D * binPackingFactory1D = [[BinPackingFactory1D alloc] initWithBinCapacity:1.0f];
         
         // Write output information how many beans was used for packing
-        NSLog(@"Number of used bins: %d", [binPackingFactory1D detailSearchAlgorithm:inputItems]);
+        NSLog(@"Number of used bins: %d", [binPackingFactory1D searchWithUsageOfGeneticAlgorithm:inputItems:10:50]);
     }
     
     return 0;

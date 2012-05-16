@@ -7,6 +7,7 @@
 //
 
 #import "BinPackingFactory1D.h"
+#import "GeneticAlgorithmFactory1D.h"
 
 #define MAX_PERMUTATION_COUNT   500000
 
@@ -21,8 +22,8 @@
     NSMutableArray *bestItemsCombination;
 }
 
-// Default initializator
-- (id) initWithItemArray:(float)initBinCapacity 
+// Custom Initializator
+- (id) initWithBinCapacity:(float)initBinCapacity
 {
     if (self = [super init]) 
     {
@@ -92,6 +93,41 @@
     return [self->bins count];
 }
 
+// PRIVATE: Fitness function first fit
+// Used as "delegate" method which is being sent to GA as fitness function
+int (^ffFirstFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenItems)
+{
+    float currentBinUsedSpace = 0.0f;
+    NSMutableArray *bins = [NSMutableArray new];
+    
+    for (NSNumber* item in givenItems) 
+    {
+        float currentItemValue = [item floatValue];
+        
+        // Check if item fits in current bin
+        if (currentBinUsedSpace + currentItemValue <= 1.0f) 
+        {
+            // Add item to bin
+            currentBinUsedSpace += currentItemValue;
+            
+            // Check if we reached last item in array
+            // If YES, it needs to be added to bin
+            if ([givenItems lastObject] == item) 
+            {
+                [bins addObject:[NSNumber numberWithFloat:currentBinUsedSpace]];
+            }
+        }
+        else
+        {
+            [bins addObject:[NSNumber numberWithFloat:currentBinUsedSpace]];
+            
+            currentBinUsedSpace = currentItemValue;
+        }
+    }
+    
+    return (int)[bins count];
+};
+
 // PUBLIC: Best Fit Bin Packing Algorithm
 // RETURNS: Number of used bins
 - (int) bestFitAlgorithm:(NSMutableArray *)givenItems
@@ -132,6 +168,57 @@
     
     return [self->bins count];
 }
+
+// PRIVATE: Fitness function best fit
+// Used as "delegate" method which is being sent to GA as fitness function
+int (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenItems)
+{
+    NSMutableArray *bins = [NSMutableArray new];
+    
+    for (NSNumber* item in givenItems) 
+    {
+        float currentItemValue = [item floatValue];
+        
+        // Get index of bin where current item should be placed
+        int itemPlacementIndex = -1;
+        float nearestToFill = 0.0f;
+        
+        // If no bins exist index -1 is returned indicating that new bin should be created
+        if (0 == [bins count])
+        {
+
+        }
+        else
+        {
+            // Iterate through all current bins and check in which bin current item fits the bes
+            for (int i = 0; i < [bins count]; i++)
+            {
+                float algCurrentItemValue = [[bins objectAtIndex:(NSUInteger)i] floatValue];
+                
+                if (algCurrentItemValue + currentItemValue > nearestToFill && algCurrentItemValue + currentItemValue <= 1.0f)
+                {
+                    itemPlacementIndex = i;
+                    nearestToFill = algCurrentItemValue + currentItemValue;
+                }
+            }
+        }
+        
+        if (-1 == itemPlacementIndex)
+        {
+            [bins addObject:[NSNumber numberWithFloat:currentItemValue]];
+        }
+        else
+        {
+            [bins replaceObjectAtIndex:(NSUInteger)itemPlacementIndex withObject:[NSNumber numberWithFloat:(currentItemValue + [[bins objectAtIndex:(NSUInteger)itemPlacementIndex] floatValue])]];
+        }
+    }
+    
+    // Write down items combination as the best one
+    //[self showHowItemsArePackedInBins];
+    
+    return (int)[bins count];
+
+};
 
 // PUBLIC: Detail Search Bin Packing Algorithm
 // RETURNS: Number of used bins
@@ -212,6 +299,30 @@
     [self showHowItemsArePackedBestInBins];
     
     return bestBinNumber;
+}
+
+// PUBLIC: Bin Packing algorithm with usage of Genetic Algorithm
+- (int) searchWithUsageOfGeneticAlgorithm:(NSMutableArray *)givenItems:(int)numberOfUnitsInGeneration:(int)numberOfGenerations
+{
+    int currentNumberOfGenerations = 0;
+    GeneticAlgorithmFactory1D *gaFactory = [[GeneticAlgorithmFactory1D alloc] initWithItemArray:givenItems:numberOfUnitsInGeneration];
+    
+    [gaFactory generateInitialPopulation];
+    [gaFactory calculateGenerationCost:ffFirstFitAlgorithm];
+    
+    do
+    {
+        currentNumberOfGenerations += 1;
+        
+        [gaFactory mate];
+        [gaFactory mutate:5];
+        
+        [gaFactory generationSwap];
+        [gaFactory calculateGenerationCost:ffFirstFitAlgorithm];
+        
+    } while (currentNumberOfGenerations < numberOfGenerations);
+    
+    return gaFactory.lowestCost;
 }
 
 // PRIVATE: Make permutation of item indexes
