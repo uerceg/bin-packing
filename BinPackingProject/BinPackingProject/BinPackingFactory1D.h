@@ -10,10 +10,17 @@
 
 @interface BinPackingFactory1D : NSObject
 
-- (id) initWithBinCapacity:(float)initBinCapacity;
-- (int) bestFitAlgorithm:(NSMutableArray *)givenItems;
-- (int) firstFitAlgorithm:(NSMutableArray *)givenItems;
-- (int) detailSearchAlgorithm:(NSMutableArray *)givenItems;
-- (int) searchWithUsageOfGeneticAlgorithm:(NSMutableArray *)givenItems:(int)numberOfUnitsInGeneration:(int)numberOfGenerations;
+- (id) init;
+
+- (NSUInteger) firstFitAlgorithmForGivenItems:(NSMutableArray *)givenItems
+                              withBinCapacity:(float)initBinCapacity;
+- (NSUInteger) bestFitAlgorithmForGivenItems:(NSMutableArray *)givenItems 
+                             withBinCapacity:(float)initBinCapacity;
+- (NSUInteger) detailSearchAlgorithmForGivenItems:(NSMutableArray *)givenItems 
+                                  withBinCapacity:(float)initBinCapacity;
+- (NSUInteger) searchWithUsageOfGeneticAlgorithmForItems:(NSMutableArray *)bpItems
+                               numberOfUnitsInGeneration:(NSUInteger)unitNumber
+                                     numberOfGenerations:(NSUInteger)generationsNumber 
+                                mutationFactorPercentage:(NSUInteger)mutationFactor;
 
 @end

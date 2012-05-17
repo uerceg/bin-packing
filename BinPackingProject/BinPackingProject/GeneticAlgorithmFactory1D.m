@@ -6,19 +6,18 @@
 //  Open Source project
 //
 
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-
 #import "GeneticAlgorithmFactory1D.h"
 
 @implementation GeneticAlgorithmFactory1D
 {
-    int numberOfItemsInUnit;
-    int numberOfUnitsInGeneration;
+    NSUInteger numberOfItemsInUnit;
+    NSUInteger numberOfUnitsInGeneration;
     
-    int lowestCost;
-    int indexOfLowestCostItem;
+    NSUInteger lowestCost;
+    NSUInteger indexOfLowestCostItem;
     
     NSMutableArray *items;
+    NSMutableArray *dummyItems;
     NSMutableArray *currentGeneration;
     NSMutableArray *currentGenerationCost;
     NSMutableArray *newGeneration;
@@ -26,8 +25,9 @@
 
 @synthesize lowestCost;
 
-// Custom initializator
-- (id) initWithItemArray:(NSMutableArray *)itemsArray:(int)numberOfUnits
+// INIT: Custom initializator which takes item array and 
+- (id) initWithNumberOfItemsInGeneration:(NSUInteger)numberOfUnits 
+                              itemsArray:(NSMutableArray *)itemsArray
 {
     if (self = [super init]) 
     {
@@ -37,13 +37,19 @@
         self->items = [NSMutableArray new];
         [self->items addObjectsFromArray:itemsArray];
         
-        self->newGeneration = [NSMutableArray new];
-        self->currentGeneration = [NSMutableArray new];
+        self->newGeneration = [NSMutableArray array];
+        self->currentGeneration = [NSMutableArray array];
         self->currentGenerationCost = [NSMutableArray new];
         
         // Initialize GA fields
         self->numberOfItemsInUnit = [self->items count];
         self->numberOfUnitsInGeneration = numberOfUnits;
+        
+        self->dummyItems = [NSMutableArray new];
+        for (int i = 0; i < self->numberOfItemsInUnit; i++)
+        {
+            [self->dummyItems addObject:[NSNumber numberWithFloat:0.0f]];
+        }
     }
     
     return self;
@@ -53,48 +59,40 @@
 - (void) generateInitialPopulation
 {
     // Generate numberOfUnitsInGeneration units in to start algorithm
-    for (int i = 0; i < self->numberOfUnitsInGeneration; i++)
+    for (NSUInteger i = 0; i < self->numberOfUnitsInGeneration; i++)
     {
-        //[self printItemContent:self->items];
         [self shuffleItems];
-        //[self printItemContent:self->items];
-        [self->currentGeneration addObject:self->items];
+        
+        NSMutableArray *newUnit = [NSMutableArray new];
+        [newUnit addObjectsFromArray:self->items];
+        
+        [self->currentGeneration addObject:newUnit];
     }
-}
-
-- (void) printItemContent:(NSMutableArray *)items
-{
-    NSLog(@"-------------");
-    for (NSNumber *item in self->items)
-    {
-        NSLog(@"%f ", [item floatValue]);
-    }
-    NSLog(@"-------------");
 }
 
 // PUBLIC: Method where selection + crossing is done
 - (void) mate
 {
     // 2 parents make 1 new unit
-    for (int i = 0; i < self->numberOfUnitsInGeneration; i++)
+    for (NSUInteger i = 0; i < self->numberOfUnitsInGeneration; i++)
     {
-        int parentIndexOne;
-        int parentIndexTwo;
+        NSUInteger parentIndexOne;
+        NSUInteger parentIndexTwo;
         
         do
         {
             parentIndexOne = arc4random_uniform(self->numberOfUnitsInGeneration);
             parentIndexTwo = arc4random_uniform(self->numberOfUnitsInGeneration);
-
+            
         } while (parentIndexOne == parentIndexTwo);
         
         // At this point we have chosen 2 different parents
         // Now we should do the crossover
         
         // Crossover: randomly choose 3 positions in unit and do parent mixing
-        int randomIndexOne;
-        int randomIndexTwo;
-        int randomIndexThree;
+        NSUInteger randomIndexOne;
+        NSUInteger randomIndexTwo;
+        NSUInteger randomIndexThree;
         
         do
         {
@@ -108,76 +106,136 @@
         NSMutableArray *parentOne = [NSMutableArray new];
         NSMutableArray *parentTwo = [NSMutableArray new];
         
-        [parentOne addObjectsFromArray:[self->currentGeneration objectAtIndex:(NSUInteger)parentIndexOne]];
-        [parentTwo addObjectsFromArray:[self->currentGeneration objectAtIndex:(NSUInteger)parentIndexTwo]];
+        [parentOne addObjectsFromArray:[self->currentGeneration objectAtIndex:parentIndexOne]];
+        [parentTwo addObjectsFromArray:[self->currentGeneration objectAtIndex:parentIndexTwo]];
         
-        int parentChoice = arc4random_uniform(2);
+        NSUInteger parentChoice = arc4random_uniform(2);
         NSMutableArray *child = [NSMutableArray new];
+        [child addObjectsFromArray:self->dummyItems];
         
         if (parentChoice == 0)
         {
             // 3 items will be taken from first parent
-            for (int i = 0; i < self->numberOfItemsInUnit; i++)
+            [child replaceObjectAtIndex:randomIndexOne withObject:[parentOne objectAtIndex:randomIndexOne]];
+            [child replaceObjectAtIndex:randomIndexTwo withObject:[parentOne objectAtIndex:randomIndexTwo]];
+            [child replaceObjectAtIndex:randomIndexThree withObject:[parentOne objectAtIndex:randomIndexThree]];
+            
+            // Fill the rest of the fields with remaining items from parent two
+            // In sequential order from left to right
+            int remainedIndexes[self->numberOfItemsInUnit - 3];
+            int remainedIndexesCount = 0;
+            
+            // Determine remained unfilled indexes
+            for (NSUInteger i = 0; i < self->numberOfItemsInUnit; i++)
             {
-                if (i == randomIndexOne)
+                if (i != randomIndexOne && i != randomIndexTwo && i != randomIndexThree)
                 {
-                    [child addObject:[parentOne objectAtIndex:(NSUInteger)randomIndexOne]];
-                }
-                else if (i == randomIndexTwo)
-                {
-                    [child addObject:[parentOne objectAtIndex:(NSUInteger)randomIndexTwo]];
-                }
-                else if (i == randomIndexThree)
-                {
-                    [child addObject:[parentOne objectAtIndex:(NSUInteger)randomIndexThree]];
-                }
-                else
-                {
-                    [child addObject:[parentTwo objectAtIndex:(NSUInteger)i]];
+                    remainedIndexes[remainedIndexesCount] = i;
+                    remainedIndexesCount += 1;
                 }
             }
+            
+            // Determine unfilled items
+            NSMutableArray *remainedItems = [NSMutableArray new];
+            [remainedItems addObjectsFromArray:parentTwo];
+            
+            NSMutableArray *itemsToRemoveFromRemained = [NSMutableArray new];
+            [itemsToRemoveFromRemained addObject:[parentOne objectAtIndex:randomIndexOne]];
+            [itemsToRemoveFromRemained addObject:[parentOne objectAtIndex:randomIndexTwo]];
+            [itemsToRemoveFromRemained addObject:[parentOne objectAtIndex:randomIndexThree]];
+            
+            for (NSNumber *item in itemsToRemoveFromRemained)
+            {
+                NSUInteger i;
+                
+                for (i = 0; i < [remainedItems count]; i++)
+                {
+                    if ([item floatValue] == [[remainedItems objectAtIndex:i] floatValue])
+                    {
+                        break;
+                    }
+                }
+            
+                [remainedItems removeObjectAtIndex:i];
+            }
+            
+            // Now place unfilled items to unfilled indexes in child
+            for (NSInteger i = 0; i < [remainedItems count]; i++)
+            {
+                [child replaceObjectAtIndex:remainedIndexes[i] withObject:[remainedItems objectAtIndex:i]];
+            }
+        
         }
         else
         {
             // 3 items will be taken from second parent
-            for (int i = 0; i < self->numberOfItemsInUnit; i++)
+            [child replaceObjectAtIndex:randomIndexOne withObject:[parentTwo objectAtIndex:randomIndexOne]];
+            [child replaceObjectAtIndex:randomIndexTwo withObject:[parentTwo objectAtIndex:randomIndexTwo]];
+            [child replaceObjectAtIndex:randomIndexThree withObject:[parentTwo objectAtIndex:randomIndexThree]];
+            
+            // Fill the rest of the fields with remaining items from parent two
+            // In sequential order from left to right
+            NSUInteger remainedIndexes[self->numberOfItemsInUnit - 3];
+            NSUInteger remainedIndexesCount = 0;
+            
+            // Determine remained unfilled indexes
+            for (NSUInteger i = 0; i < self->numberOfItemsInUnit; i++)
             {
-                if (i == randomIndexOne)
+                if (i != randomIndexOne && i != randomIndexTwo && i != randomIndexThree)
                 {
-                    [child addObject:[parentTwo objectAtIndex:(NSUInteger)randomIndexOne]];
-                }
-                else if (i == randomIndexTwo)
-                {
-                    [child addObject:[parentTwo objectAtIndex:(NSUInteger)randomIndexTwo]];
-                }
-                else if (i == randomIndexThree)
-                {
-                    [child addObject:[parentTwo objectAtIndex:(NSUInteger)randomIndexThree]];
-                }
-                else
-                {
-                    [child addObject:[parentOne objectAtIndex:(NSUInteger)i]];
+                    remainedIndexes[remainedIndexesCount] = i;
+                    remainedIndexesCount += 1;
                 }
             }
+            
+            // Determine unfilled items
+            NSMutableArray *remainedItems = [NSMutableArray new];
+            [remainedItems addObjectsFromArray:parentOne];
+            
+            NSMutableArray *itemsToRemoveFromRemained = [NSMutableArray new];
+            [itemsToRemoveFromRemained addObject:[parentTwo objectAtIndex:randomIndexOne]];
+            [itemsToRemoveFromRemained addObject:[parentTwo objectAtIndex:randomIndexTwo]];
+            [itemsToRemoveFromRemained addObject:[parentTwo objectAtIndex:randomIndexThree]];
+            
+            for (NSNumber *item in itemsToRemoveFromRemained)
+            {
+                NSUInteger i;
+                
+                for (i = 0; i < [remainedItems count]; i++)
+                {
+                    if ([item floatValue] == [[remainedItems objectAtIndex:i] floatValue])
+                    {
+                        break;
+                    }
+                }
+                
+                [remainedItems removeObjectAtIndex:i];
+            }
+            
+            // Now place unfilled items to unfilled indexes in child
+            for (NSInteger i = 0; i < [remainedItems count]; i++)
+            {
+                [child replaceObjectAtIndex:remainedIndexes[i] withObject:[remainedItems objectAtIndex:i]];
+            }
         }
-        
+    
         // At this moment we have child and we will add it to next generation
         [self->newGeneration addObject:child];
     }
 }
 
-// PUBLIC
-- (void) mutate:(int)mutationFactorPercentage
+// PUBLIC: Method which mutates unit with certain percentage of probability
+- (void) mutate:(NSUInteger)mutationFactorPercentage
 {
     for (NSMutableArray *unit in self->newGeneration)
     {
-        int randomNumber = arc4random_uniform(100);
+        NSUInteger randomNumber = arc4random_uniform(100);
         
         if (randomNumber < mutationFactorPercentage)
         {
             // Do the mutation
-            int randomIndexOne;
-            int randomIndexTwo;
+            NSUInteger randomIndexOne;
+            NSUInteger randomIndexTwo;
             
             do
             {
@@ -195,7 +253,7 @@
     }
 }
 
-// PUBLIC
+// PUBLIC: Method which swaps newly created generation to become current generation
 - (void) generationSwap
 {
     [self->currentGeneration removeAllObjects];
@@ -203,14 +261,15 @@
     [self->newGeneration removeAllObjects];
 }
 
-- (void) calculateGenerationCost:(int (^) (NSMutableArray*)) fitnessFunction
+// PUBLIC: Method which calculates cost per each unit in generation based on fitness function
+- (void) calculateGenerationCost:(NSUInteger (^) (NSMutableArray*)) fitnessFunction
 {
     [self->currentGenerationCost removeAllObjects];
     
     // Run fitness function on all items and calculate cost for each item
     for (NSMutableArray *item in self->currentGeneration)
     {
-        int itemCost = fitnessFunction(item);
+        NSUInteger itemCost = fitnessFunction(item);
         
         [self->currentGenerationCost addObject:[NSNumber numberWithInt:itemCost]];
     }
@@ -218,10 +277,10 @@
     [self locateLowestCostItem];
 }
 
-// PRIVATE
+// PRIVATE: Method for calculating lowest cost unit and remembering its number of used bins and its index in item array
 - (void) locateLowestCostItem
 {
-    int currentItemCost;
+    NSUInteger currentItemCost;
     
     for (NSNumber *cost in self->currentGenerationCost)
     {
@@ -243,8 +302,8 @@
     for (NSUInteger i = 0; i < count; ++i) 
     {
         // Select a random element between i and end of array to swap with.
-        int nElements = count - i;
-        int n = (arc4random() % nElements) + i;
+        NSInteger nElements = count - i;
+        NSInteger n = (arc4random() % nElements) + i;
         
         // Do the shuffle
         [self->items exchangeObjectAtIndex:i withObjectAtIndex:n];
