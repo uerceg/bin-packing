@@ -13,11 +13,11 @@
 - (id) init;
 
 - (NSUInteger) firstFitAlgorithmForGivenItems:(NSMutableArray *)givenItems
-                              withBinCapacity:(float)initBinCapacity;
+                              withBinCapacity:(CGFloat)initBinCapacity;
 - (NSUInteger) bestFitAlgorithmForGivenItems:(NSMutableArray *)givenItems 
-                             withBinCapacity:(float)initBinCapacity;
+                             withBinCapacity:(CGFloat)initBinCapacity;
 - (NSUInteger) detailSearchAlgorithmForGivenItems:(NSMutableArray *)givenItems 
-                                  withBinCapacity:(float)initBinCapacity;
+                                  withBinCapacity:(CGFloat)initBinCapacity;
 - (NSUInteger) searchWithUsageOfGeneticAlgorithmForItems:(NSMutableArray *)bpItems
                                numberOfUnitsInGeneration:(NSUInteger)unitNumber
                                      numberOfGenerations:(NSUInteger)generationsNumber 

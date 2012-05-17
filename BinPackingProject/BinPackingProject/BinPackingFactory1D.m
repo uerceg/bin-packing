@@ -14,7 +14,7 @@
 
 @implementation BinPackingFactory1D 
 {
-    @private float binCapacity;
+    @private CGFloat binCapacity;
     
     @private NSMutableArray *bins;
     @private NSMutableArray *items;
@@ -44,9 +44,9 @@
 // PUBLIC: First Fit Bin Packing Algorithm
 // RETURNS: Number of used bins
 - (NSUInteger) firstFitAlgorithmForGivenItems:(NSMutableArray *)givenItems
-                       withBinCapacity:(float)initBinCapacity
+                       withBinCapacity:(CGFloat)initBinCapacity
 {
-    float currentBinUsedSpace;
+    CGFloat currentBinUsedSpace;
     
     self->binCapacity = initBinCapacity;
     [self->bins removeAllObjects];
@@ -98,13 +98,12 @@
 // RETURNS: Number of used bins
 NSUInteger (^ffFirstFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenItems)
 {
-    float currentBinUsedSpace = 0.0f;
-    
+    CGFloat currentBinUsedSpace = 0.0f;
     NSMutableArray *bins = [NSMutableArray new];
     
     for (NSNumber* item in givenItems) 
     {
-        float currentItemValue = [item floatValue];
+        CGFloat currentItemValue = [item floatValue];
         
         // Check if item fits in current bin
         if (currentBinUsedSpace + currentItemValue <= FF_BIN_CAPACITY) 
@@ -133,7 +132,7 @@ NSUInteger (^ffFirstFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenI
 // PUBLIC: Best Fit Bin Packing Algorithm
 // RETURNS: Number of used bins
 - (NSUInteger) bestFitAlgorithmForGivenItems:(NSMutableArray *)givenItems 
-                             withBinCapacity:(float)initBinCapacity
+                             withBinCapacity:(CGFloat)initBinCapacity
 {
     self->binCapacity = initBinCapacity;
     [self->bins removeAllObjects];
@@ -146,7 +145,7 @@ NSUInteger (^ffFirstFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenI
     
     for (NSNumber* item in self->items) 
     {
-        float currentItemValue = [item floatValue];
+        CGFloat currentItemValue = [item floatValue];
         
         // Get index of bin where current item should be placed
         NSInteger itemPlacementIndex = [self getIndexOfBestFitBin:currentItemValue];
@@ -183,8 +182,8 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
     
     for (NSNumber* item in givenItems) 
     {
-        float nearestToFill = 0.0f;
-        float currentItemValue = [item floatValue];
+        CGFloat nearestToFill = 0.0f;
+        CGFloat currentItemValue = [item floatValue];
         NSInteger itemPlacementIndex = -1;
         
         // Get index of bin where current item should be placed
@@ -199,7 +198,7 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
             // Iterate through all current bins and check in which bin current item fits the bes
             for (NSInteger i = 0; i < [bins count]; i++)
             {
-                float algCurrentItemValue = [[bins objectAtIndex:i] floatValue];
+                CGFloat algCurrentItemValue = [[bins objectAtIndex:i] floatValue];
                 
                 if (algCurrentItemValue + currentItemValue > nearestToFill && algCurrentItemValue + currentItemValue <= FF_BIN_CAPACITY)
                 {
@@ -228,13 +227,13 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
 // PUBLIC: Detail Search Bin Packing Algorithm
 // RETURNS: Number of used bins
 - (NSUInteger) detailSearchAlgorithmForGivenItems:(NSMutableArray *)givenItems 
-                           withBinCapacity:(float)initBinCapacity
+                           withBinCapacity:(CGFloat)initBinCapacity
 {
     NSUInteger permutationCount = 0;
     NSUInteger bestBinNumber = INT_MAX;
     NSUInteger estimatedOptimalBinNumber = 0;
     
-    float allItemsValueSum = 0;
+    CGFloat allItemsValueSum = 0;
     
     for (NSNumber *item in givenItems)
     {
@@ -251,7 +250,7 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
     NSUInteger numberOfItems = [sortedArrayOfGivenItems count];
     
     // Allocating memory for 1 permutation
-    float *permutedIndexes = malloc(numberOfItems * sizeof(NSInteger));
+    CGFloat *permutedIndexes = malloc(numberOfItems * sizeof(NSInteger));
     
     // Placing indexes in array
     // Indexes are the thing which is going to be permuted
@@ -274,7 +273,7 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
         }
         
         // Now we need to check for current item order how many bins we need
-        NSUInteger numberOfBins = [self bestFitAlgorithmForGivenItems:newItemsPermutation 
+        NSUInteger numberOfBins = [self firstFitAlgorithmForGivenItems:newItemsPermutation 
                                                withBinCapacity:initBinCapacity];
         
         // Locate through all permutations best item combination and save it
@@ -304,7 +303,7 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
     free(permutedIndexes);
     
     // Write down items combination as the best one
-    [self showHowItemsArePackedBestInBins];
+    // [self showHowItemsArePackedBestInBins];
     
     return bestBinNumber;
 }
@@ -344,7 +343,7 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
 
 // PRIVATE: Make permutation of item indexes
 // RETURNS: New combination of indexes
-- (float *) makeIndexPermutationFromIndexArray:(float *)array 
+- (CGFloat *) makeIndexPermutationFromIndexArray:(CGFloat *)array 
                                  numberOfItems:(const NSUInteger)size 
 {
     // Slide down the array looking for where we're smaller than the next guy
@@ -388,10 +387,10 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
 
 // PRIVATE: Find best fitting bin for given item
 // RETURNS: Best fitting bin index
-- (NSUInteger) getIndexOfBestFitBin:(float)newItemValue
+- (NSUInteger) getIndexOfBestFitBin:(CGFloat)newItemValue
 {
     NSUInteger index = -1;
-    float nearestToFill = 0.0f;
+    CGFloat nearestToFill = 0.0f;
     
     // If no bins exist index -1 is returned indicating that new bin should be created
     if (0 == [self->bins count])
@@ -403,7 +402,7 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
         // Iterate through all current bins and check in which bin current item fits the bes
         for (NSUInteger i = 0; i < [self->bins count]; i++)
         {
-            float currentItemValue = [[self->bins objectAtIndex:i] floatValue];
+            CGFloat currentItemValue = [[self->bins objectAtIndex:i] floatValue];
             
             if (currentItemValue + newItemValue > nearestToFill && currentItemValue + newItemValue <= self->binCapacity)
             {

@@ -24,14 +24,29 @@ int main(int argc, const char * argv[])
         [inputItems addObject:[NSNumber numberWithFloat:0.1f]];
         [inputItems addObject:[NSNumber numberWithFloat:0.3f]];
         [inputItems addObject:[NSNumber numberWithFloat:0.9f]];
-        [inputItems addObject:[NSNumber numberWithFloat:0.2f]];
         [inputItems addObject:[NSNumber numberWithFloat:0.8f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.2f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.5f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.3f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.2f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.5f]];
+        [inputItems addObject:[NSNumber numberWithFloat:0.5f]];
+        
         
         // Write output information how many beans was used for packing
-        NSLog(@"Number of used bins: %lu", [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
-                                                                                numberOfUnitsInGeneration:20 
-                                                                                      numberOfGenerations:500 
-                                                                                 mutationFactorPercentage:5]);
+        NSLog(@"[FF] Number of used bins: %lu", [binPackingFactory1D firstFitAlgorithmForGivenItems:inputItems 
+                                                                                   withBinCapacity:1.0f]);
+        
+        NSLog(@"[BF] Number of used bins: %lu", [binPackingFactory1D bestFitAlgorithmForGivenItems:inputItems 
+                                                                                   withBinCapacity:1.0f]);
+        
+        NSLog(@"[PM] Number of used bins: %lu", [binPackingFactory1D detailSearchAlgorithmForGivenItems:inputItems 
+                                                                                        withBinCapacity:1.0f]);
+        
+        NSLog(@"[GA] Number of used bins: %lu", [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+                                                                                numberOfUnitsInGeneration:10 
+                                                                                      numberOfGenerations:100 
+                                                                                 mutationFactorPercentage:2]);
     }
     
     return 0;

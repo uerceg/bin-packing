@@ -10,17 +10,17 @@
 
 @implementation GeneticAlgorithmFactory1D
 {
-    NSUInteger numberOfItemsInUnit;
-    NSUInteger numberOfUnitsInGeneration;
+    @private NSUInteger numberOfItemsInUnit;
+    @private NSUInteger numberOfUnitsInGeneration;
     
-    NSUInteger lowestCost;
-    NSUInteger indexOfLowestCostItem;
+    @private NSUInteger lowestCost;
+    @private NSUInteger indexOfLowestCostItem;
     
-    NSMutableArray *items;
-    NSMutableArray *dummyItems;
-    NSMutableArray *currentGeneration;
-    NSMutableArray *currentGenerationCost;
-    NSMutableArray *newGeneration;
+    @private NSMutableArray *items;
+    @private NSMutableArray *dummyItems;
+    @private NSMutableArray *newGeneration;
+    @private NSMutableArray *currentGeneration;
+    @private NSMutableArray *currentGenerationCost;
 }
 
 @synthesize lowestCost;
@@ -46,7 +46,7 @@
         self->numberOfUnitsInGeneration = numberOfUnits;
         
         self->dummyItems = [NSMutableArray new];
-        for (int i = 0; i < self->numberOfItemsInUnit; i++)
+        for (NSUInteger i = 0; i < self->numberOfItemsInUnit; i++)
         {
             [self->dummyItems addObject:[NSNumber numberWithFloat:0.0f]];
         }
@@ -126,11 +126,11 @@
             int remainedIndexesCount = 0;
             
             // Determine remained unfilled indexes
-            for (NSUInteger i = 0; i < self->numberOfItemsInUnit; i++)
+            for (NSUInteger j = 0; j < self->numberOfItemsInUnit; j++)
             {
-                if (i != randomIndexOne && i != randomIndexTwo && i != randomIndexThree)
+                if (j != randomIndexOne && j != randomIndexTwo && j != randomIndexThree)
                 {
-                    remainedIndexes[remainedIndexesCount] = i;
+                    remainedIndexes[remainedIndexesCount] = j;
                     remainedIndexesCount += 1;
                 }
             }
@@ -146,23 +146,23 @@
             
             for (NSNumber *item in itemsToRemoveFromRemained)
             {
-                NSUInteger i;
+                NSUInteger j;
                 
-                for (i = 0; i < [remainedItems count]; i++)
+                for (j = 0; j < [remainedItems count]; j++)
                 {
-                    if ([item floatValue] == [[remainedItems objectAtIndex:i] floatValue])
+                    if ([item floatValue] == [[remainedItems objectAtIndex:j] floatValue])
                     {
                         break;
                     }
                 }
             
-                [remainedItems removeObjectAtIndex:i];
+                [remainedItems removeObjectAtIndex:j];
             }
             
             // Now place unfilled items to unfilled indexes in child
-            for (NSInteger i = 0; i < [remainedItems count]; i++)
+            for (NSInteger j = 0; j < [remainedItems count]; j++)
             {
-                [child replaceObjectAtIndex:remainedIndexes[i] withObject:[remainedItems objectAtIndex:i]];
+                [child replaceObjectAtIndex:remainedIndexes[j] withObject:[remainedItems objectAtIndex:j]];
             }
         
         }
@@ -179,11 +179,11 @@
             NSUInteger remainedIndexesCount = 0;
             
             // Determine remained unfilled indexes
-            for (NSUInteger i = 0; i < self->numberOfItemsInUnit; i++)
+            for (NSUInteger j = 0; j < self->numberOfItemsInUnit; j++)
             {
-                if (i != randomIndexOne && i != randomIndexTwo && i != randomIndexThree)
+                if (j != randomIndexOne && j != randomIndexTwo && j != randomIndexThree)
                 {
-                    remainedIndexes[remainedIndexesCount] = i;
+                    remainedIndexes[remainedIndexesCount] = j;
                     remainedIndexesCount += 1;
                 }
             }
@@ -199,23 +199,23 @@
             
             for (NSNumber *item in itemsToRemoveFromRemained)
             {
-                NSUInteger i;
+                NSUInteger j;
                 
-                for (i = 0; i < [remainedItems count]; i++)
+                for (j = 0; j < [remainedItems count]; j++)
                 {
-                    if ([item floatValue] == [[remainedItems objectAtIndex:i] floatValue])
+                    if ([item floatValue] == [[remainedItems objectAtIndex:j] floatValue])
                     {
                         break;
                     }
                 }
                 
-                [remainedItems removeObjectAtIndex:i];
+                [remainedItems removeObjectAtIndex:j];
             }
             
             // Now place unfilled items to unfilled indexes in child
-            for (NSInteger i = 0; i < [remainedItems count]; i++)
+            for (NSInteger j = 0; j < [remainedItems count]; j++)
             {
-                [child replaceObjectAtIndex:remainedIndexes[i] withObject:[remainedItems objectAtIndex:i]];
+                [child replaceObjectAtIndex:remainedIndexes[j] withObject:[remainedItems objectAtIndex:j]];
             }
         }
     
