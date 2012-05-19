@@ -7,6 +7,7 @@
 //
 
 #import "BinPackingFactory1D.h"
+#import "PSOAlgorithmFactory1D.h"
 #import "GeneticAlgorithmFactory1D.h"
 
 #define FF_BIN_CAPACITY         1.0f
@@ -339,6 +340,37 @@ NSUInteger (^ffBestFitAlgorithm) (NSMutableArray *) = ^(NSMutableArray * givenIt
     } while (currentNumberOfGenerations < generationsNumber);
     
     return gaFactory.lowestCost;
+}
+
+// PUBLIC: Bin Packing algorithm with usage of PSO Algorithm
+// RETURNS: Number of bins found in optimal item scheduling
+- (NSUInteger) searchWithUsageOfPSOAlgorithmForItems:(NSMutableArray *)bpItems 
+                                  numberOfIterations:(NSUInteger)iterations 
+                            numberOfParticlesInSwarm:(NSUInteger)numberOfParticles
+{
+    // Initialize PSO factory object
+    NSUInteger currentNumberOfIterations = 0;
+    PSOAlgorithmFactory1D *psoFactory = [[PSOAlgorithmFactory1D alloc] initWithNumberOfParticlesInSwarm:numberOfParticles 
+                                                                                     numberOfIterations:iterations 
+                                                                                         particlesArray:bpItems];
+    
+    [psoFactory generateInitialSwarm];
+    [psoFactory calculateBestCandidateFromSwarm:ffFirstFitAlgorithm];
+    [psoFactory calculateVelocityForNextStep:ffFirstFitAlgorithm];
+    
+    do
+    {
+        currentNumberOfIterations += 1;
+        
+        [psoFactory addVelocityToParticlesInSwarm];
+        [psoFactory calculateBestCandidateFromSwarm:ffFirstFitAlgorithm];
+        [psoFactory calculateVelocityForNextStep:ffFirstFitAlgorithm];
+        
+        [psoFactory swarmSwap];
+        
+    } while (currentNumberOfIterations < iterations);
+    
+    return psoFactory.allTimeBestParticleFitnessValue;
 }
 
 // PRIVATE: Make permutation of item indexes

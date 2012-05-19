@@ -22,5 +22,8 @@
                                numberOfUnitsInGeneration:(NSUInteger)unitNumber
                                      numberOfGenerations:(NSUInteger)generationsNumber 
                                 mutationFactorPercentage:(NSUInteger)mutationFactor;
+- (NSUInteger) searchWithUsageOfPSOAlgorithmForItems:(NSMutableArray *)bpItems 
+                                  numberOfIterations:(NSUInteger)iterations 
+                            numberOfParticlesInSwarm:(NSUInteger)numberOfParticles;
 
 @end
