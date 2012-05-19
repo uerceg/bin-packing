@@ -6,6 +6,8 @@
 //  Open Source project
 //
 
+#import <Foundation/Foundation.h>
+
 @interface GeneticAlgorithmFactory1D : NSObject
 
 @property (nonatomic, readonly) NSUInteger lowestCost;
