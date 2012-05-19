@@ -12,6 +12,8 @@
 		9D2FF31F1562877600AE5072 /* BinPackingProject.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 9D2FF31E1562877600AE5072 /* BinPackingProject.1 */; };
 		9D2FF327156287DC00AE5072 /* BinPackingFactory1D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */; };
 		9D2FF32D15628C8700AE5072 /* GeneticAlgorithmFactory1D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D2FF32C15628C8700AE5072 /* GeneticAlgorithmFactory1D.m */; };
+		9D7B555E15667AFD006E98C8 /* BinPackingFactory2D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D7B555D15667AFD006E98C8 /* BinPackingFactory2D.m */; };
+		9D7B55611566B3F2006E98C8 /* PSOAlgorithmFactory1D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D7B55601566B3F2006E98C8 /* PSOAlgorithmFactory1D.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +39,10 @@
 		9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BinPackingFactory1D.m; sourceTree = "<group>"; };
 		9D2FF32B15628C8700AE5072 /* GeneticAlgorithmFactory1D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GeneticAlgorithmFactory1D.h; sourceTree = "<group>"; };
 		9D2FF32C15628C8700AE5072 /* GeneticAlgorithmFactory1D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneticAlgorithmFactory1D.m; sourceTree = "<group>"; };
+		9D7B555C15667AFD006E98C8 /* BinPackingFactory2D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BinPackingFactory2D.h; sourceTree = "<group>"; };
+		9D7B555D15667AFD006E98C8 /* BinPackingFactory2D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BinPackingFactory2D.m; sourceTree = "<group>"; };
+		9D7B555F1566B3F2006E98C8 /* PSOAlgorithmFactory1D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSOAlgorithmFactory1D.h; sourceTree = "<group>"; };
+		9D7B55601566B3F2006E98C8 /* PSOAlgorithmFactory1D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSOAlgorithmFactory1D.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +92,10 @@
 				9D2FF326156287DC00AE5072 /* BinPackingFactory1D.m */,
 				9D2FF32B15628C8700AE5072 /* GeneticAlgorithmFactory1D.h */,
 				9D2FF32C15628C8700AE5072 /* GeneticAlgorithmFactory1D.m */,
+				9D7B555F1566B3F2006E98C8 /* PSOAlgorithmFactory1D.h */,
+				9D7B55601566B3F2006E98C8 /* PSOAlgorithmFactory1D.m */,
+				9D7B555C15667AFD006E98C8 /* BinPackingFactory2D.h */,
+				9D7B555D15667AFD006E98C8 /* BinPackingFactory2D.m */,
 			);
 			path = BinPackingProject;
 			sourceTree = "<group>";
@@ -151,6 +161,8 @@
 				9D2FF31B1562877600AE5072 /* main.m in Sources */,
 				9D2FF327156287DC00AE5072 /* BinPackingFactory1D.m in Sources */,
 				9D2FF32D15628C8700AE5072 /* GeneticAlgorithmFactory1D.m in Sources */,
+				9D7B555E15667AFD006E98C8 /* BinPackingFactory2D.m in Sources */,
+				9D7B55611566B3F2006E98C8 /* PSOAlgorithmFactory1D.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -243,6 +255,7 @@
 				9D2FF3241562877600AE5072 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
