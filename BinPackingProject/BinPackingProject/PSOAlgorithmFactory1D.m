@@ -118,11 +118,11 @@
 // PUBLIC: Calculating correction factor for making new swarm
 - (void) calculateVelocityForNextStep:(NSUInteger (^) (NSMutableArray *)) fitnessFunction
 {
-    CGFloat w = 0.9f;
-    CGFloat c1 = 1.0f;
-    CGFloat c2 = 1.0f;
-    CGFloat r1 = arc4random();
-    CGFloat r2 = arc4random();
+    float w = 0.9f;
+    float c1 = 1.0f;
+    float c2 = 1.0f;
+    float r1 = arc4random();
+    float r2 = arc4random();
     
     [self->velocity removeAllObjects];
     
