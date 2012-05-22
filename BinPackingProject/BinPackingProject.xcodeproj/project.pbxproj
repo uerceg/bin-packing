@@ -14,6 +14,7 @@
 		9D2FF32D15628C8700AE5072 /* GeneticAlgorithmFactory1D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D2FF32C15628C8700AE5072 /* GeneticAlgorithmFactory1D.m */; };
 		9D7B555E15667AFD006E98C8 /* BinPackingFactory2D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D7B555D15667AFD006E98C8 /* BinPackingFactory2D.m */; };
 		9D7B55611566B3F2006E98C8 /* PSOAlgorithmFactory1D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D7B55601566B3F2006E98C8 /* PSOAlgorithmFactory1D.m */; };
+		9D7B5564156A5205006E98C8 /* GeneticAlgorithmFactory2D.m in Sources */ = {isa = PBXBuildFile; fileRef = 9D7B5563156A5205006E98C8 /* GeneticAlgorithmFactory2D.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -43,6 +44,8 @@
 		9D7B555D15667AFD006E98C8 /* BinPackingFactory2D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BinPackingFactory2D.m; sourceTree = "<group>"; };
 		9D7B555F1566B3F2006E98C8 /* PSOAlgorithmFactory1D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PSOAlgorithmFactory1D.h; sourceTree = "<group>"; };
 		9D7B55601566B3F2006E98C8 /* PSOAlgorithmFactory1D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PSOAlgorithmFactory1D.m; sourceTree = "<group>"; };
+		9D7B5562156A5205006E98C8 /* GeneticAlgorithmFactory2D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GeneticAlgorithmFactory2D.h; sourceTree = "<group>"; };
+		9D7B5563156A5205006E98C8 /* GeneticAlgorithmFactory2D.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneticAlgorithmFactory2D.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +99,8 @@
 				9D7B55601566B3F2006E98C8 /* PSOAlgorithmFactory1D.m */,
 				9D7B555C15667AFD006E98C8 /* BinPackingFactory2D.h */,
 				9D7B555D15667AFD006E98C8 /* BinPackingFactory2D.m */,
+				9D7B5562156A5205006E98C8 /* GeneticAlgorithmFactory2D.h */,
+				9D7B5563156A5205006E98C8 /* GeneticAlgorithmFactory2D.m */,
 			);
 			path = BinPackingProject;
 			sourceTree = "<group>";
@@ -163,6 +168,7 @@
 				9D2FF32D15628C8700AE5072 /* GeneticAlgorithmFactory1D.m in Sources */,
 				9D7B555E15667AFD006E98C8 /* BinPackingFactory2D.m in Sources */,
 				9D7B55611566B3F2006E98C8 /* PSOAlgorithmFactory1D.m in Sources */,
+				9D7B5564156A5205006E98C8 /* GeneticAlgorithmFactory2D.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
