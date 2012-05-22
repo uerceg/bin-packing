@@ -12,12 +12,13 @@
 
 @property (nonatomic, readonly) NSUInteger lowestCost;
 
-- (id) initWithNumberOfItemsInGeneration:(NSUInteger)numberOfUnits 
-                              itemsArray:(NSMutableArray *)itemsArray;
+- (id) initWithNumberOfUnitsInGeneration:(NSUInteger)numberOfUnits 
+                              itemsArray:(NSMutableArray *)itemsArray 
+                           elitismFactor:(NSUInteger) elitism;
 
-- (void) mate;
 - (void) generationSwap;
 - (void) generateInitialPopulation;
+- (void) mate:(NSUInteger)crossingPointsNumber;
 - (void) mutate:(NSUInteger)mutationFactorPercentage;
 - (void) calculateGenerationCost:(NSUInteger (^) (NSMutableArray *)) fitnessFunction;
 
