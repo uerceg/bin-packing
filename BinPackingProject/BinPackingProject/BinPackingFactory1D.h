@@ -13,24 +13,32 @@
 // Property used only for info display purposes
 @property (nonatomic) NSUInteger permutationCount;
 
-- (id) init;
+- (id) initWithBinCapacity:(float)initBinCapacity 
+                  binLimit:(NSUInteger)binLimit 
+                 isLimited:(BOOL)isLimited;
 
-- (NSUInteger) nextFitAlgorithmForGivenItems:(NSMutableArray *)givenItems
-                              withBinCapacity:(float)initBinCapacity;
-- (NSUInteger) firstFitAlgorithmForGivenItems:(NSMutableArray *)givenItems
-                              withBinCapacity:(float)initBinCapacity;
-- (NSUInteger) bestFitAlgorithmForGivenItems:(NSMutableArray *)givenItems 
-                             withBinCapacity:(float)initBinCapacity;
-- (NSUInteger) detailSearchAlgorithmForGivenItems:(NSMutableArray *)givenItems 
-                                  withBinCapacity:(float)initBinCapacity;
+- (NSUInteger) nextFitAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
+- (NSUInteger) nextFitDecreasingAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
+- (NSUInteger) firstFitAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
+- (NSUInteger) firstFitDecreasingAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
+- (NSUInteger) bestFitAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
+- (NSUInteger) bestFitDecreasingAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
+- (NSUInteger) worstFitAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
+- (NSUInteger) worstFitDecreasingAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
+- (NSUInteger) harmonicAlgorithm1DForGivenItems:(NSMutableArray *)givenItems
+                         algorithmGranulation:(NSUInteger)granularity;
+- (NSUInteger) detailSearchAlgorithm1DForGivenItems:(NSMutableArray *)givenItems;
 - (NSUInteger) searchWithUsageOfGeneticAlgorithmForItems:(NSMutableArray *)bpItems
                                numberOfUnitsInGeneration:(NSUInteger)unitNumber
                                      numberOfGenerations:(NSUInteger)generationsNumber 
                                 mutationFactorPercentage:(NSUInteger)mutationFactor 
                                            elitismFactor:(NSUInteger)elitismFactor 
-                                 numberOfCrossoverPoints:(NSUInteger)crossoverPoints;
+                                 numberOfCrossoverPoints:(NSUInteger)crossoverPoints 
+                                fitnessFunctionSelection:(NSUInteger)choice;
 - (NSUInteger) searchWithUsageOfPSOAlgorithmForItems:(NSMutableArray *)bpItems 
                                   numberOfIterations:(NSUInteger)iterations 
                             numberOfParticlesInSwarm:(NSUInteger)numberOfParticles;
+
+- (void) showStorageUsageDetails;
 
 @end
