@@ -10,10 +10,10 @@
 
 @implementation GeneticAlgorithmFactory2D
 {
-    @private float bestShelvesUsage;
     @private float storageWidth;
     @private float storageHeight;
     @private float usedStorage;
+    @private float bestShelvesUsage;
     @private float usedStorageHeight;
     @private float usedStorageHeightPercent;
     
@@ -22,7 +22,6 @@
     @private NSUInteger numberOfUnitsInGeneration;
     
     @private NSUInteger lowestCost;
-    @private NSUInteger indexOfLowestCostItem;
     
     @private NSMutableArray *rectangles;
     @private NSMutableArray *rectanglesElite;
@@ -32,7 +31,7 @@
     @private NSMutableArray *currentGenerationCost;
 }
 
-@synthesize lowestCost, usedStorage, usedStorageHeight, usedStorageHeightPercent;
+@synthesize lowestCost, usedStorage, usedStorageHeight, usedStorageHeightPercent, bestShelvesUsage;
 
 // INIT: Custom initializator which takes item array and 
 - (id) initWithNumberOfUnitsInGeneration:(NSUInteger)numberOfUnits 
@@ -47,7 +46,7 @@
         self->elitismFactor = elitism;
         self->storageWidth = width;
         self->storageHeight = height;
-        self->bestShelvesUsage = 0.0f;
+        self->bestShelvesUsage = (float)INT_MAX;
         
         // Save original array of items
         self->rectangles = [NSMutableArray new];
@@ -329,8 +328,8 @@
 }
 
 // PUBLIC: Method which calculates cost per each unit in generation based on fitness function
-- (void) calculateGenerationCost:(NSUInteger (^) (NSMutableArray *))fitnessFunction 
-             helpFitnessFunction:(NSUInteger (^) (NSMutableArray *, NSMutableArray *, NSMutableArray *))helpFF
+- (void) calculateGenerationCostForFitnessFunction1:(NSUInteger (^) (NSMutableArray *))ffunction1 
+                                   fitnessFunction2:(NSUInteger (^) (NSMutableArray *, NSMutableArray *, NSMutableArray *, NSMutableArray *))ffunction2
 {
     [self->rectanglesElite removeAllObjects];
     [self->currentGenerationCost removeAllObjects];
@@ -338,7 +337,7 @@
     // Run fitness function on all items and calculate cost for each item
     for (NSMutableArray *rectangleArray in self->currentGeneration)
     {
-        NSUInteger unitCost = fitnessFunction(rectangleArray);
+        NSUInteger unitCost = ffunction1(rectangleArray);
         
         [self->currentGenerationCost addObject:[NSNumber numberWithInt:unitCost]];
     }
@@ -358,19 +357,20 @@
         [self->rectanglesElite addObject:[self->currentGeneration objectAtIndex:[[[sortedArray objectAtIndex:i] objectAtIndex:1] intValue]]];
     }
     
-    // Save the best one for printing purpose
+    // Save the best one for printing purpose (best ones are in elite units)
     for (NSUInteger i = 0; i < [self->rectanglesElite count]; i++)
     {
         NSMutableArray *eliteUnit = [NSMutableArray arrayWithArray:[self->rectanglesElite objectAtIndex:i]];
         NSMutableArray *eliteUnitShelvesHeight = [NSMutableArray new];
         NSMutableArray *eliteUnitCurrentlyUsedShelfWidth = [NSMutableArray new];
+        NSMutableArray *eliteUnitCurrentlyUsedShelfArea = [NSMutableArray new];
         
-        NSUInteger shelfNumber = helpFF(eliteUnit, eliteUnitCurrentlyUsedShelfWidth, eliteUnitShelvesHeight);
+        NSUInteger shelfNumber = ffunction2(eliteUnit, eliteUnitCurrentlyUsedShelfWidth, eliteUnitShelvesHeight, eliteUnitCurrentlyUsedShelfArea);
         
         float currentShelvesUsage = [self shelvesWidthUsagePercentage:eliteUnitShelvesHeight 
-                                                 currentlyUsedWidth:eliteUnitCurrentlyUsedShelfWidth];
+                                                 currentlyUsedArea:eliteUnitCurrentlyUsedShelfArea];
         
-        if (self->bestShelvesUsage < currentShelvesUsage)
+        if (self->bestShelvesUsage > currentShelvesUsage)
         {
             self->bestShelvesUsage = currentShelvesUsage;
             
@@ -411,6 +411,7 @@
         storageUsedHeight += [height floatValue];
     }
     
+    // Update publicly exposed fields from this class
     self->usedStorage = storageUsedArea / storageArea * 100.0f;
     self->usedStorageHeight = storageUsedHeight;
     self->usedStorageHeightPercent = storageUsedHeight / self->storageHeight * 100.0f;
@@ -419,18 +420,23 @@
 // PRIVATE: Calculate current shelves width usage in % in order to help
 //          detail search algorithm to locate the best rectangle combination
 - (float) shelvesWidthUsagePercentage:(NSMutableArray *)shelvesHeight 
-                   currentlyUsedWidth:(NSMutableArray *)currentlyUsedShelfWidth
+                   currentlyUsedArea:(NSMutableArray *)currentlyUsedShelfArea
 {
-    float usedShelvesWidth = 0.0f;
-    float totalShelvesWidth = [shelvesHeight count] * self->storageWidth;
+    float usedShelvesArea = 0.0f;
+    float totalShelvesArea = 0.0f;
     
-    // Calculate total used width on all shelves
-    for (NSNumber *usedWidth in currentlyUsedShelfWidth)
+    for (NSNumber *height in shelvesHeight)
     {
-        usedShelvesWidth += [usedWidth floatValue];
+        totalShelvesArea += [height floatValue] * self->storageWidth;
     }
     
-    return usedShelvesWidth / totalShelvesWidth;
+    // Calculate total used width on all shelves
+    for (NSNumber *usedArea in currentlyUsedShelfArea)
+    {
+        usedShelvesArea += [usedArea floatValue];
+    }
+    
+    return (totalShelvesArea - usedShelvesArea);
 }
 
 // PRIVATE: Sorting method
@@ -453,7 +459,6 @@ NSComparisonResult customCompareFunction2D(NSArray* first, NSArray* second, void
         if (currentItemCost < self->lowestCost)
         {
             self->lowestCost = currentItemCost;
-            self->indexOfLowestCostItem = [self->currentGenerationCost indexOfObject:cost];
         }
     }
 }
