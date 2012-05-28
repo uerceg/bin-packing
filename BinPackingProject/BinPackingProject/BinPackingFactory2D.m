@@ -14,19 +14,26 @@
 
 @implementation BinPackingFactory2D
 {
-    @private NSUInteger bestShelfNumber;
-    @private NSUInteger permutationCount;
-    @private NSUInteger numberOfUsedShelves;
+    @private BOOL storageHeightLimited;
     
+    @private float wastedArea;
     @private float storageWidth;
     @private float storageHeight;
     @private float storageOccupacy;
+    @private float totalShelvesUsedArea;
+    @private float wastedAreaPercentage;
     @private float bestWidthUsagePercentage;
     
+    @private NSUInteger bestShelfNumber;
+    @private NSUInteger permutationCount;
+    @private NSUInteger numberOfUsedShelves;
+
     @private NSMutableArray *rectangles;
     @private NSMutableArray *shelvesHeight;
-    @private NSMutableArray *numberOfRectanglesOnShelf;
+    @private NSMutableArray *currentlyUsedShelfArea;
     @private NSMutableArray *currentlyUsedShelfWidth;
+    @private NSMutableArray *numberOfRectanglesOnShelf;
+    @private NSMutableArray *rectanglesPositionsOnShelves;
     
     @private NSMutableArray *bestShelvesHeight;
     @private NSMutableArray *bestShelvesUsedWidth;
@@ -36,16 +43,21 @@
 @synthesize permutationCount;
 
 - (id) initWithStorageWidth:(float)width 
-                storageHeight:(float)height
+              storageHeight:(float)height
+       storageHeightLimited:(BOOL)limit
 
 {
     if (self = [super init]) 
     {        
         // Initialize class fields
+        self->storageHeightLimited = limit;
+        
         self->rectangles = [NSMutableArray new];
         self->shelvesHeight = [NSMutableArray new];
+        self->currentlyUsedShelfArea = [NSMutableArray new];
         self->currentlyUsedShelfWidth = [NSMutableArray new];
         self->numberOfRectanglesOnShelf = [NSMutableArray new];
+        self->rectanglesPositionsOnShelves = [NSMutableArray array];
         
         self->bestShelvesHeight = [NSMutableArray new];
         self->bestShelvesUsedWidth = [NSMutableArray new];
@@ -62,19 +74,30 @@
 }
 
 // PUBLIC: Next Fit Bin Packing Algorithm
-- (NSUInteger) shelfNextFitAlgorithmForGivenRectangles:(NSMutableArray *)givenRectangles
+// RETURNS: Number of used shelves
+- (NSUInteger) shelfNextFitAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
 {
-    self->numberOfUsedShelves = 0;
-    
-    [self->shelvesHeight removeAllObjects];
-    [self->currentlyUsedShelfWidth removeAllObjects];
-    [self->rectangles removeAllObjects];
-    [self->rectangles addObjectsFromArray:givenRectangles];
-    
     float usedWidth = 0.0f;
     float currentHeight = 0.0f;
     NSUInteger currentShelfIndex = 0;
+    NSUInteger currentSelectedRectangle = 0;
     
+    self->numberOfUsedShelves = 0;
+    
+    [self->rectangles removeAllObjects];
+    [self->shelvesHeight removeAllObjects];
+    [self->currentlyUsedShelfArea removeAllObjects];
+    [self->currentlyUsedShelfWidth removeAllObjects];
+    [self->rectanglesPositionsOnShelves removeAllObjects];
+    [self->rectangles addObjectsFromArray:givenRectangles];
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [self->currentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
     for (NSValue *wrappedRectangle in givenRectangles)
     {
         NSRect rectangle = [wrappedRectangle rectValue];
@@ -95,8 +118,14 @@
                 [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
                 
                 currentHeight = rectangle.size.width;
-                
                 currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
             else
             {
@@ -108,8 +137,14 @@
                 [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
                 
                 currentHeight = rectangle.size.height;
-                
                 currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
         }
         else
@@ -129,6 +164,13 @@
                         usedWidth += rectangle.size.width;
                         [self->currentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
                         foundShelfForRectangle = YES;
+                        
+                        // Save rectangle position on shelf
+                        [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                     }
                 }
                 else if (rectangle.size.width <= currentHeight)
@@ -138,6 +180,13 @@
                         usedWidth += rectangle.size.height;
                         [self->currentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
                         foundShelfForRectangle = YES;
+                        
+                        // Save rectangle position on shelf
+                        [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                     }
                 }
                 
@@ -150,6 +199,13 @@
                     usedWidth = rectangle.size.height;
                     
                     currentShelfIndex += 1;
+                    
+                    // Save rectangle position on shelf
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
             }
             else
@@ -163,6 +219,13 @@
                         usedWidth += rectangle.size.height;
                         [self->currentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
                         foundShelfForRectangle = YES;
+                        
+                        // Save rectangle position on shelf
+                        [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                     }
                 }
                 else if (rectangle.size.height <= currentHeight)
@@ -172,6 +235,13 @@
                         usedWidth += rectangle.size.width;
                         [self->currentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
                         foundShelfForRectangle = YES;
+                        
+                        // Save rectangle position on shelf
+                        [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                     }
                 }
                 
@@ -184,9 +254,543 @@
                     usedWidth = rectangle.size.width;
                     
                     currentShelfIndex += 1;
+                    
+                    // Save rectangle position on shelf
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
             }
         }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    self->numberOfUsedShelves = [self->shelvesHeight count];
+    
+    return self->numberOfUsedShelves;
+}
+
+// PRIVATE: Block implementation of Next Fit Bin Packing algorithm (used for GA)
+// RETURNS: Number of used shelves
+NSUInteger (^ffShelfNextFitAlgorithm2DFF1) (NSMutableArray *) = ^(NSMutableArray * givenRectangles)
+{
+    float usedWidth = 0.0f;
+    float currentHeight = 0.0f;
+    NSUInteger currentShelfIndex = 0;
+    NSUInteger currentSelectedRectangle = 0;
+    
+    NSMutableArray *ffShelvesHeight = [NSMutableArray new];
+    NSMutableArray *ffCurrentlyUsedShelfWidth = [NSMutableArray new];
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in givenRectangles)
+    {
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        if (0 == [ffShelvesHeight count])
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                // Storage is empty, assign first item height to be
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                // Add rectangle to first shelf
+                usedWidth += rectangle.size.height;
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                
+                currentHeight = rectangle.size.width;
+                currentShelfIndex = [ffShelvesHeight count] - 1;
+            }
+            else
+            {
+                // Storage is empty, assign first item height to be
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                // Add rectangle to first shelf
+                usedWidth += rectangle.size.width;
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                
+                currentHeight = rectangle.size.height;
+                currentShelfIndex = [ffShelvesHeight count] - 1;
+            }
+        }
+        else
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                BOOL foundShelfForRectangle = NO;
+                
+                if (rectangle.size.height <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                    {
+                        usedWidth += rectangle.size.width;
+                        [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                    }
+                }
+                else if (rectangle.size.width <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                    {
+                        usedWidth += rectangle.size.height;
+                        [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                    }
+                }
+                
+                if (NO == foundShelfForRectangle)
+                {
+                    [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                    [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                    
+                    currentHeight = rectangle.size.width;
+                    usedWidth = rectangle.size.height;
+                    
+                    currentShelfIndex += 1;
+                }
+            }
+            else
+            {
+                BOOL foundShelfForRectangle = NO;
+                
+                if (rectangle.size.width <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                    {
+                        usedWidth += rectangle.size.height;
+                        [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                    }
+                }
+                else if (rectangle.size.height <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                    {
+                        usedWidth += rectangle.size.width;
+                        [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                    }
+                }
+                
+                if (NO == foundShelfForRectangle)
+                {
+                    [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                    [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                    
+                    currentHeight = rectangle.size.height;
+                    usedWidth = rectangle.size.width;
+                    
+                    currentShelfIndex += 1;
+                }
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    return [ffShelvesHeight count];
+};
+
+// PRIVATE: Block implementation of Next Fit Bin Packing algorithm (used for GA)
+// RETURNS: Number of used shelves
+NSUInteger (^ffShelfNextFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *, NSMutableArray *, NSMutableArray *) = ^(NSMutableArray * givenRectangles, NSMutableArray *ffCurrentlyUsedShelfWidth, NSMutableArray *ffShelvesHeight, NSMutableArray *ffCurrentlyUsedShelfArea)
+{
+    float usedWidth = 0.0f;
+    float currentHeight = 0.0f;
+    NSUInteger currentShelfIndex = 0;
+    NSUInteger currentSelectedRectangle = 0;
+    
+    [ffShelvesHeight removeAllObjects];
+    [ffCurrentlyUsedShelfArea removeAllObjects];
+    [ffCurrentlyUsedShelfWidth removeAllObjects];
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [givenRectangles count]; i++)
+    {
+        [ffCurrentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in givenRectangles)
+    {
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        if (0 == [ffShelvesHeight count])
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                // Storage is empty, assign first item height to be
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                // Add rectangle to first shelf
+                usedWidth += rectangle.size.height;
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                
+                currentHeight = rectangle.size.width;
+                currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                // Storage is empty, assign first item height to be
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                // Add rectangle to first shelf
+                usedWidth += rectangle.size.width;
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                
+                currentHeight = rectangle.size.height;
+                currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                BOOL foundShelfForRectangle = NO;
+                
+                if (rectangle.size.height <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                    {
+                        usedWidth += rectangle.size.width;
+                        [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                    }
+                }
+                else if (rectangle.size.width <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                    {
+                        usedWidth += rectangle.size.height;
+                        [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                    }
+                }
+                
+                if (NO == foundShelfForRectangle)
+                {
+                    [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                    [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                    
+                    currentHeight = rectangle.size.width;
+                    usedWidth = rectangle.size.height;
+                    
+                    currentShelfIndex += 1;
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                    [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                }
+            }
+            else
+            {
+                BOOL foundShelfForRectangle = NO;
+                
+                if (rectangle.size.width <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                    {
+                        usedWidth += rectangle.size.height;
+                        [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                    }
+                }
+                else if (rectangle.size.height <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                    {
+                        usedWidth += rectangle.size.width;
+                        [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                    }
+                }
+                
+                if (NO == foundShelfForRectangle)
+                {
+                    [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                    [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                    
+                    currentHeight = rectangle.size.height;
+                    usedWidth = rectangle.size.width;
+                    
+                    currentShelfIndex += 1;
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                    [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                }
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    return [ffShelvesHeight count];
+};
+
+// PUBLIC: Next Fit Decreasing Height Bin Packing Algorithm
+// RETURNS: Number of used shelves
+- (NSUInteger) shelfNextFitDecreasingAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
+{
+    float usedWidth = 0.0f;
+    float currentHeight = 0.0f;
+    NSUInteger currentShelfIndex = 0;
+    NSUInteger currentSelectedRectangle = 0;
+    
+    self->numberOfUsedShelves = 0;
+    
+    [self->rectangles removeAllObjects];
+    [self->shelvesHeight removeAllObjects];
+    [self->currentlyUsedShelfArea removeAllObjects];
+    [self->currentlyUsedShelfWidth removeAllObjects];
+    [self->rectanglesPositionsOnShelves removeAllObjects];
+    [self->rectangles addObjectsFromArray:givenRectangles];
+    
+    // Sort rectangles by height
+    NSMutableArray *specArray = [NSMutableArray array];
+    
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        NSRect rectangle = [[self->rectangles objectAtIndex:i] rectValue];
+        
+        [specArray addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithFloat:rectangle.size.height], [NSNumber numberWithInteger:i], nil]];
+    }
+    
+    NSArray *sortedArray = [specArray sortedArrayUsingFunction:customCompareFunctionDecr context:NULL];
+    NSMutableArray *sortedRectangles = [NSMutableArray new];
+    
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [sortedRectangles addObject:[self->rectangles objectAtIndex:[[[sortedArray objectAtIndex:i] objectAtIndex:1] intValue]]];
+    }
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [self->currentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in sortedRectangles)
+    {
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        if (0 == [self->shelvesHeight count])
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                // Storage is empty, assign first item height to be
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                // Add rectangle to first shelf
+                usedWidth += rectangle.size.height;
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                
+                currentHeight = rectangle.size.width;
+                currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                // Storage is empty, assign first item height to be
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                // Add rectangle to first shelf
+                usedWidth += rectangle.size.width;
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                
+                currentHeight = rectangle.size.height;
+                currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                BOOL foundShelfForRectangle = NO;
+                
+                if (rectangle.size.height <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.width <= self->storageWidth)
+                    {
+                        usedWidth += rectangle.size.width;
+                        [self->currentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                        
+                        // Save rectangle position on shelf
+                        NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                        [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                    }
+                }
+                else if (rectangle.size.width <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.height <= self->storageWidth)
+                    {
+                        usedWidth += rectangle.size.height;
+                        [self->currentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                        
+                        // Save rectangle position on shelf
+                        NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                        [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                    }
+                }
+                
+                if (NO == foundShelfForRectangle)
+                {
+                    [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                    [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                    
+                    currentHeight = rectangle.size.width;
+                    usedWidth = rectangle.size.height;
+                    
+                    currentShelfIndex += 1;
+                    
+                    // Save rectangle position on shelf
+                    NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                }
+            }
+            else
+            {
+                BOOL foundShelfForRectangle = NO;
+                
+                if (rectangle.size.width <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.height <= self->storageWidth)
+                    {
+                        usedWidth += rectangle.size.height;
+                        [self->currentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                        
+                        // Save rectangle position on shelf
+                        NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                        [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                    }
+                }
+                else if (rectangle.size.height <= currentHeight)
+                {
+                    if (usedWidth + rectangle.size.width <= self->storageWidth)
+                    {
+                        usedWidth += rectangle.size.width;
+                        [self->currentlyUsedShelfWidth replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:usedWidth]];
+                        foundShelfForRectangle = YES;
+                        
+                        // Save rectangle position on shelf
+                        NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                        [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                        
+                        // Update used are on shelf
+                        float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                        [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                    }
+                }
+                
+                if (NO == foundShelfForRectangle)
+                {
+                    currentHeight = rectangle.size.height;
+                    usedWidth = rectangle.size.width;
+                    
+                    [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:usedWidth]];
+                    [self->shelvesHeight addObject:[NSNumber numberWithFloat:currentHeight]];
+                    
+                    currentShelfIndex += 1;
+                    
+                    // Save rectangle position on shelf
+                    NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                }
+            }
+        }
+        
+        currentSelectedRectangle += 1;
     }
     
     self->numberOfUsedShelves = [self->shelvesHeight count];
@@ -195,15 +799,27 @@
 }
 
 // PUBLIC: First Fit Bin Packing Algorithm
-- (NSUInteger) shelfFirstFitAlgorithmForGivenRectangles:(NSMutableArray *)givenRectangles
+// RETURNS: Number of used shelves
+- (NSUInteger) shelfFirstFitAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
 {
+    NSUInteger currentSelectedRectangle = 0;
+    
     self->numberOfUsedShelves = 0;
     
-    [self->shelvesHeight removeAllObjects];
-    [self->currentlyUsedShelfWidth removeAllObjects];
     [self->rectangles removeAllObjects];
+    [self->shelvesHeight removeAllObjects];
+    [self->currentlyUsedShelfArea removeAllObjects];
+    [self->currentlyUsedShelfWidth removeAllObjects];
+    [self->rectanglesPositionsOnShelves removeAllObjects];
     [self->rectangles addObjectsFromArray:givenRectangles];
     
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [self->currentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
     for (NSValue *wrappedRectangle in givenRectangles)
     {
         NSRect rectangle = [wrappedRectangle rectValue];
@@ -222,6 +838,15 @@
                 
                 // Add rectangle to first shelf
                 [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
             else
             {
@@ -230,6 +855,15 @@
                 
                 // Add rectangle to first shelf
                 [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
         }
         else
@@ -326,11 +960,25 @@
                 {
                     [self->currentlyUsedShelfWidth replaceObjectAtIndex:fittingShelfId 
                                                              withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                    
+                    // Save rectangle position on shelf
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:fittingShelfId], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:fittingShelfId] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:fittingShelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
                 else
                 {
                     [self->currentlyUsedShelfWidth replaceObjectAtIndex:fittingShelfId 
                                                              withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                    
+                    // Save rectangle position on shelf
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:fittingShelfId], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:fittingShelfId] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:fittingShelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
             }
             else
@@ -349,6 +997,13 @@
                     
                     // Add rectangle to first shelf
                     [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                    
+                    // Save rectangle position on shelf
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue]] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue] withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
                 else
                 {
@@ -357,10 +1012,19 @@
                     
                     // Add rectangle to first shelf
                     [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                    
+                    // Save rectangle position on shelf
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue]] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue] withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
 
             }
         }
+        
+        currentSelectedRectangle += 1;
     }
     
     self->numberOfUsedShelves = [self->shelvesHeight count];
@@ -368,9 +1032,9 @@
     return self->numberOfUsedShelves;
 }
 
-// PRIVATE: This method is being passed to GA as fitness function
-// RETURNS: Number of used bins
-NSUInteger (^ffFirstFitAlgorithm2D) (NSMutableArray *) = ^(NSMutableArray * givenRectangles)
+// PRIVATE: Block implementation of First Fit Bin Packing algorithm (used for GA)
+// RETURNS: Number of used shelves
+NSUInteger (^ffShelfFirstFitAlgorithm2DFF1) (NSMutableArray *) = ^(NSMutableArray * givenRectangles)
 {
     NSMutableArray *ffShelvesHeight = [NSMutableArray new];
     NSMutableArray *ffCurrentlyUsedShelfWidth = [NSMutableArray new];
@@ -537,16 +1201,21 @@ NSUInteger (^ffFirstFitAlgorithm2D) (NSMutableArray *) = ^(NSMutableArray * give
     return [ffShelvesHeight count];
 };
 
-// PRIVATE: This method is being passed to GA as fitness function
-// RETURNS: Number of used bins
-NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSMutableArray *) = ^(NSMutableArray * givenRectangles, NSMutableArray *ffCurrentlyUsedShelfWidth, NSMutableArray *ffShelvesHeight)
-{
-    //NSMutableArray *ffShelvesHeight = [NSMutableArray new];
-    //NSMutableArray *ffCurrentlyUsedShelfWidth = [NSMutableArray new];
-    
+// PRIVATE: Block implementation of First Fit Bin Packing algorithm (used for GA)
+// RETURNS: Number of used shelves
+NSUInteger (^ffShelfFirstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *, NSMutableArray *, NSMutableArray *) = ^(NSMutableArray * givenRectangles, NSMutableArray *ffCurrentlyUsedShelfWidth, NSMutableArray *ffShelvesHeight, NSMutableArray *ffCurrentlyUsedShelfArea)
+{    
     [ffShelvesHeight removeAllObjects];
+    [ffCurrentlyUsedShelfArea removeAllObjects];
     [ffCurrentlyUsedShelfWidth removeAllObjects];
     
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [givenRectangles count]; i++)
+    {
+        [ffCurrentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
     for (NSValue *wrappedRectangle in givenRectangles)
     {
         NSRect rectangle = [wrappedRectangle rectValue];
@@ -565,6 +1234,12 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
                 
                 // Add rectangle to first shelf
                 [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
             else
             {
@@ -573,6 +1248,12 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
                 
                 // Add rectangle to first shelf
                 [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
         }
         else
@@ -669,11 +1350,19 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
                 {
                     [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:fittingShelfId 
                                                              withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:fittingShelfId] floatValue];
+                    [ffCurrentlyUsedShelfArea replaceObjectAtIndex:fittingShelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
                 else
                 {
                     [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:fittingShelfId 
                                                              withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:fittingShelfId] floatValue];
+                    [ffCurrentlyUsedShelfArea replaceObjectAtIndex:fittingShelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
             }
             else
@@ -692,6 +1381,10 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
                     
                     // Add rectangle to first shelf
                     [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:[[NSNumber numberWithInteger:([ffShelvesHeight count] - 1)] intValue]] floatValue];
+                    [ffCurrentlyUsedShelfArea replaceObjectAtIndex:[[NSNumber numberWithInteger:([ffShelvesHeight count] - 1)] intValue] withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
                 else
                 {
@@ -700,6 +1393,10 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
                     
                     // Add rectangle to first shelf
                     [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:[[NSNumber numberWithInteger:([ffShelvesHeight count] - 1)] intValue]] floatValue];
+                    [ffCurrentlyUsedShelfArea replaceObjectAtIndex:[[NSNumber numberWithInteger:([ffShelvesHeight count] - 1)] intValue] withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
                 }
                 
             }
@@ -709,17 +1406,287 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
     return [ffShelvesHeight count];
 };
 
-// PUBLIC: Best Fit Bin Packing Algorithm
-- (NSUInteger) shelfBestFitAlgorithmForGivenRectangles:(NSMutableArray *)givenRectangles
+// PUBLIC: First Fit Decreasing Algorithm
+// RETURNS: Number of used shelves
+- (NSUInteger) shelfFirstFitDecreasingAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
 {
+    NSUInteger currentSelectedRectangle = 0;
+    
     self->numberOfUsedShelves = 0;
     
     [self->rectangles removeAllObjects];
-    [self->rectangles addObjectsFromArray:givenRectangles];
     [self->shelvesHeight removeAllObjects];
+    [self->currentlyUsedShelfArea removeAllObjects];
     [self->currentlyUsedShelfWidth removeAllObjects];
+    [self->rectanglesPositionsOnShelves removeAllObjects];
+    [self->rectangles addObjectsFromArray:givenRectangles];
     
-    for (NSValue *wrappedRectangle in givenRectangles)
+    // Sort rectangles by height
+    NSMutableArray *specArray = [NSMutableArray array];
+    
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        NSRect rectangle = [[self->rectangles objectAtIndex:i] rectValue];
+        
+        [specArray addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithFloat:rectangle.size.height], [NSNumber numberWithInteger:i], nil]];
+    }
+    
+    NSArray *sortedArray = [specArray sortedArrayUsingFunction:customCompareFunctionDecr context:NULL];
+    NSMutableArray *sortedRectangles = [NSMutableArray new];
+    
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [sortedRectangles addObject:[self->rectangles objectAtIndex:[[[sortedArray objectAtIndex:i] objectAtIndex:1] intValue]]];
+    }
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [self->currentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in sortedRectangles)
+    {
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        // Check if there's any open shelf
+        if (0 == [self->shelvesHeight count])
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                // Storage is empty, assign first item height to be
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                // Add rectangle to first shelf
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                // Storage is empty, assign first item height to be
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                // Add rectangle to first shelf
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            BOOL foundFittingShelf = NO;
+            BOOL isRectangleRotated = NO;
+            NSInteger iterator = -1;
+            NSInteger fittingShelfId = -1;
+            
+            for (NSNumber *shelfHeight in self->shelvesHeight)
+            {
+                // Try to determine which rectangle size is smaller
+                // That side will be candidate to place it by width in case second side fits height of shelf
+                // 0 - width is smaller | 1 - height is smaller
+                NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+                
+                if (rectangle.size.height <= [shelfHeight floatValue] || rectangle.size.width <= [shelfHeight floatValue])
+                {
+                    if (0 == smallerSide)
+                    {
+                        if (rectangle.size.height <= [shelfHeight floatValue])
+                        {
+                            iterator += 1;
+                            fittingShelfId = iterator;
+                            // At this moment we found shelf where current rectangle fits by height
+                            // We should now check if adding this rectangle to that shelf will exceedes shelf width
+                            if ((rectangle.size.width + [[self->currentlyUsedShelfWidth objectAtIndex:fittingShelfId] floatValue]) <= self->storageWidth)
+                            {
+                                foundFittingShelf = YES;
+                                isRectangleRotated = NO;
+                                
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            iterator += 1;
+                            fittingShelfId = iterator;
+                            // At this moment we found shelf where current rectangle fits by height
+                            // We should now check if adding this rectangle to that shelf will exceedes shelf width
+                            if ((rectangle.size.height + [[self->currentlyUsedShelfWidth objectAtIndex:fittingShelfId] floatValue]) <= self->storageWidth)
+                            {
+                                foundFittingShelf = YES;
+                                isRectangleRotated = YES;
+                                
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Rectangle height wasn't fitting to shelf height
+                        // ROTATE the rectangle and try to fit it with width-height sides swapped
+                        if (rectangle.size.width <= [shelfHeight floatValue])
+                        {
+                            iterator += 1;
+                            fittingShelfId = iterator;
+                            // At this moment we found shelf where current rectangle fits by height
+                            // We should now check if adding this rectangle to that shelf will exceede shelf width
+                            if ((rectangle.size.height + [[self->currentlyUsedShelfWidth objectAtIndex:fittingShelfId] floatValue]) <= self->storageWidth)
+                            {
+                                foundFittingShelf = YES;
+                                isRectangleRotated = YES;
+                                
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            iterator += 1;
+                            fittingShelfId = iterator;
+                            // At this moment we found shelf where current rectangle fits by height
+                            // We should now check if adding this rectangle to that shelf will exceede shelf width
+                            if ((rectangle.size.width + [[self->currentlyUsedShelfWidth objectAtIndex:fittingShelfId] floatValue]) <= self->storageWidth)
+                            {
+                                foundFittingShelf = YES;
+                                isRectangleRotated = NO;
+                                
+                                break;
+                            }
+                            
+                        }
+                    }
+                }
+            }
+            
+            if (YES == foundFittingShelf)
+            {
+                // Add rectangle to fitting shelf
+                // BE AWARE on fact that rectangle may be rotated
+                float currentShelfWidth = [[self->currentlyUsedShelfWidth objectAtIndex:fittingShelfId] floatValue];
+                
+                if (NO == isRectangleRotated)
+                {
+                    [self->currentlyUsedShelfWidth replaceObjectAtIndex:fittingShelfId 
+                                                             withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                    
+                    // Save rectangle position on shelf
+                    NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:fittingShelfId], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:fittingShelfId] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:fittingShelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                }
+                else
+                {
+                    [self->currentlyUsedShelfWidth replaceObjectAtIndex:fittingShelfId 
+                                                             withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                    
+                    // Save rectangle position on shelf
+                    NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:fittingShelfId], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:fittingShelfId] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:fittingShelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                }
+            }
+            else
+            {
+                // Fitting shelf not found, must add new one
+                // NOTE: Should be aware of storage height, for v1 we won't pay attention to that
+                
+                // Place rectangle so that shorter side is height (flip it if needed)
+                // 0 - width is smaller | 1 - height is smaller
+                NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+                
+                if (0 == smallerSide)
+                {
+                    // Storage is empty, assign first item height to be
+                    [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                    
+                    // Add rectangle to first shelf
+                    [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                    
+                    // Save rectangle position on shelf
+                    NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue]] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue] withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                }
+                else
+                {
+                    // Storage is empty, assign first item height to be
+                    [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                    
+                    // Add rectangle to first shelf
+                    [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                    
+                    // Save rectangle position on shelf
+                    NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                    [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                    
+                    // Update used are on shelf
+                    float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue]] floatValue];
+                    [self->currentlyUsedShelfArea replaceObjectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue] withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+                }
+                
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    self->numberOfUsedShelves = [self->shelvesHeight count];
+    
+    return self->numberOfUsedShelves;
+}
+
+// PUBLIC: Best Fit Bin Packing Algorithm
+// RETURNS: Number of used shelves
+- (NSUInteger) shelfBestFitAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
+{
+    NSUInteger currentSelectedRectangle = 0;
+    
+    self->numberOfUsedShelves = 0;
+    
+    [self->rectangles removeAllObjects];
+    [self->shelvesHeight removeAllObjects];
+    [self->currentlyUsedShelfArea removeAllObjects];
+    [self->currentlyUsedShelfWidth removeAllObjects];
+    [self->rectanglesPositionsOnShelves removeAllObjects];
+    [self->rectangles addObjectsFromArray:givenRectangles];
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [self->currentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in self->rectangles)
     {
         BOOL shouldRotateRectangle = NO;
         NSRect rectangle = [wrappedRectangle rectValue];
@@ -733,11 +1700,29 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
             {
                 [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
                 [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
             else
             {
                 [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
                 [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
         }
         else
@@ -748,13 +1733,1233 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
             {
                 [self->currentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
                                                          withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:shelfId], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
             else
             {
                 [self->currentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
                                                          withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:shelfId], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
             }
         }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    self->numberOfUsedShelves = [self->shelvesHeight count];
+    
+    return self->numberOfUsedShelves;
+}
+
+// PRIVATE: Block implementation of Best Fit Bin Packing algorithm (used for GA)
+// RETURNS: Number of used shelves
+NSUInteger (^ffShelfBestFitAlgorithm2DFF1) (NSMutableArray *) = ^(NSMutableArray * givenRectangles)
+{
+    NSUInteger currentSelectedRectangle = 0;
+    
+    NSMutableArray *ffShelvesHeight = [NSMutableArray new];
+    NSMutableArray *ffCurrentlyUsedShelfArea = [NSMutableArray new];
+    NSMutableArray *ffCurrentlyUsedShelfWidth = [NSMutableArray new];
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [givenRectangles count]; i++)
+    {
+        [ffCurrentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in givenRectangles)
+    {
+        BOOL shouldRotateRectangle = NO;
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        // Find id of shelf where to put new rectangle
+        NSInteger shelfId;
+        
+        /////////////
+        
+        float currentFilledShelfWidth = (float)INT_MAX;
+        float fittingShelfHeight = (float)INT_MAX;
+        
+        // Check if there's any open shelf
+        if (0 == [ffShelvesHeight count])
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                shouldRotateRectangle = YES;
+            }
+            else
+            {
+                shouldRotateRectangle = NO;
+            }
+            
+            shelfId = -1;
+        }
+        else
+        {
+            BOOL foundFittingShelf = NO;
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            // Iterate through each shelf
+            for (NSUInteger i = 0; i < [ffShelvesHeight count]; i++)
+            {
+                float currentShelfHeight = [[ffShelvesHeight objectAtIndex:i] floatValue];
+                float currentShelfWidth = [[ffCurrentlyUsedShelfWidth objectAtIndex:i] floatValue];
+                
+                // Check if current rectangle's width or height fitts current shelf
+                if (rectangle.size.height <= currentShelfHeight || rectangle.size.width <= currentShelfHeight)
+                {
+                    if (0 == smallerSide)
+                    {
+                        if (rectangle.size.height <= currentShelfHeight)
+                        {
+                            if (currentShelfWidth + rectangle.size.width < currentFilledShelfWidth && currentShelfWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.height < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.width;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = NO;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.height;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentShelfWidth + rectangle.size.height < currentFilledShelfWidth && currentShelfWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.width < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.height;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = YES;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.width;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (rectangle.size.width <= currentShelfHeight)
+                        {
+                            if (currentShelfWidth + rectangle.size.height < currentFilledShelfWidth && currentShelfWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.width < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.height;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = YES;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.width;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentShelfWidth + rectangle.size.width < currentFilledShelfWidth && currentShelfWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.height < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.width;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = NO;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.height;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (NO == foundFittingShelf)
+            {
+                // Create new shelf
+                if (0 == smallerSide)
+                {
+                    shouldRotateRectangle = YES;
+                }
+                else
+                {
+                    shouldRotateRectangle = NO;
+                }
+                
+                shelfId = -1;
+            }
+        }
+        
+        /////////////
+        
+        if (-1 == shelfId)
+        {
+            if (NO == shouldRotateRectangle)
+            {
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            float currentShelfWidth = [[ffCurrentlyUsedShelfWidth objectAtIndex:shelfId] floatValue];
+            
+            if (NO == shouldRotateRectangle)
+            {
+                [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                     withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                
+                // Update used area on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                     withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                
+                // Update used area on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    return [ffShelvesHeight count];
+};
+
+// PRIVATE: Block implementation of Best Fit Bin Packing algorithm (used for GA)
+// RETURNS: Number of used shelves
+NSUInteger (^ffShelfBestFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *, NSMutableArray *, NSMutableArray *) = ^(NSMutableArray * givenRectangles, NSMutableArray *ffCurrentlyUsedShelfWidth, NSMutableArray *ffShelvesHeight, NSMutableArray *ffCurrentlyUsedShelfArea)
+{
+    NSUInteger currentSelectedRectangle = 0;
+    
+    [ffCurrentlyUsedShelfWidth removeAllObjects];
+    [ffCurrentlyUsedShelfArea removeAllObjects];
+    [ffShelvesHeight removeAllObjects];
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [givenRectangles count]; i++)
+    {
+        [ffCurrentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in givenRectangles)
+    {
+        BOOL shouldRotateRectangle = NO;
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        // Find id of shelf where to put new rectangle
+        NSInteger shelfId;
+        
+        /////////////
+
+        float currentFilledShelfWidth = (float)INT_MAX;
+        float fittingShelfHeight = (float)INT_MAX;
+        
+        // Check if there's any open shelf
+        if (0 == [ffShelvesHeight count])
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                shouldRotateRectangle = YES;
+            }
+            else
+            {
+                shouldRotateRectangle = NO;
+            }
+            
+            shelfId = -1;
+        }
+        else
+        {
+            BOOL foundFittingShelf = NO;
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            // Iterate through each shelf
+            for (NSUInteger i = 0; i < [ffShelvesHeight count]; i++)
+            {
+                float currentShelfHeight = [[ffShelvesHeight objectAtIndex:i] floatValue];
+                float currentShelfWidth = [[ffCurrentlyUsedShelfWidth objectAtIndex:i] floatValue];
+                
+                // Check if current rectangle's width or height fitts current shelf
+                if (rectangle.size.height <= currentShelfHeight || rectangle.size.width <= currentShelfHeight)
+                {
+                    if (0 == smallerSide)
+                    {
+                        if (rectangle.size.height <= currentShelfHeight)
+                        {
+                            if (currentShelfWidth + rectangle.size.width < currentFilledShelfWidth && currentShelfWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.height < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.width;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = NO;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.height;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentShelfWidth + rectangle.size.height < currentFilledShelfWidth && currentShelfWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.width < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.height;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = YES;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.width;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (rectangle.size.width <= currentShelfHeight)
+                        {
+                            if (currentShelfWidth + rectangle.size.height < currentFilledShelfWidth && currentShelfWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.width < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.height;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = YES;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.width;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentShelfWidth + rectangle.size.width < currentFilledShelfWidth && currentShelfWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.height < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.width;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = NO;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.height;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (NO == foundFittingShelf)
+            {
+                // Create new shelf
+                if (0 == smallerSide)
+                {
+                    shouldRotateRectangle = YES;
+                }
+                else
+                {
+                    shouldRotateRectangle = NO;
+                }
+                
+                shelfId = -1;
+            }
+        }
+        
+        /////////////
+        
+        if (-1 == shelfId)
+        {
+            if (NO == shouldRotateRectangle)
+            {
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            float currentShelfWidth = [[ffCurrentlyUsedShelfWidth objectAtIndex:shelfId] floatValue];
+            
+            if (NO == shouldRotateRectangle)
+            {
+                [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                         withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                
+                // Update used area on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                         withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                
+                // Update used area on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    return [ffShelvesHeight count];
+};
+
+// PUBLIC: Best Fit Decreasing Bin Packing Algorithm
+// RETURNS: Number of used shelves
+- (NSUInteger) shelfBestFitDecreasingAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
+{
+    NSUInteger currentSelectedRectangle = 0;
+    
+    self->numberOfUsedShelves = 0;
+    
+    [self->rectangles removeAllObjects];
+    [self->shelvesHeight removeAllObjects];
+    [self->currentlyUsedShelfArea removeAllObjects];
+    [self->currentlyUsedShelfWidth removeAllObjects];
+    [self->rectanglesPositionsOnShelves removeAllObjects];
+    [self->rectangles addObjectsFromArray:givenRectangles];
+    
+    // Sort rectangles by height
+    NSMutableArray *specArray = [NSMutableArray array];
+    
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        NSRect rectangle = [[self->rectangles objectAtIndex:i] rectValue];
+        
+        [specArray addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithFloat:rectangle.size.height], [NSNumber numberWithInteger:i], nil]];
+    }
+    
+    NSArray *sortedArray = [specArray sortedArrayUsingFunction:customCompareFunctionDecr context:NULL];
+    NSMutableArray *sortedRectangles = [NSMutableArray new];
+    
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [sortedRectangles addObject:[self->rectangles objectAtIndex:[[[sortedArray objectAtIndex:i] objectAtIndex:1] intValue]]];
+    }
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [self->currentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in sortedRectangles)
+    {
+        BOOL shouldRotateRectangle = NO;
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        // Find id of shelf where to put new rectangle
+        NSInteger shelfId = [self getIndexOfBestFitBin:rectangle shouldRotate:(&shouldRotateRectangle)];
+        
+        if (-1 == shelfId)
+        {
+            if (NO == shouldRotateRectangle)
+            {
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                // Save rectangle position on shelf
+                NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue]] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue] withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                // Save rectangle position on shelf
+                NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue]] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:[[NSNumber numberWithInteger:([self->shelvesHeight count] - 1)] intValue] withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            float currentShelfWidth = [[self->currentlyUsedShelfWidth objectAtIndex:shelfId] floatValue];
+            
+            if (NO == shouldRotateRectangle)
+            {
+                [self->currentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                         withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                
+                // Save rectangle position on shelf
+                NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:shelfId], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [self->currentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                         withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                
+                // Save rectangle position on shelf
+                NSUInteger originalRectangleIndex = [[[sortedArray objectAtIndex:currentSelectedRectangle] objectAtIndex:1] intValue];
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:shelfId], [NSNumber numberWithInteger:originalRectangleIndex], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    self->numberOfUsedShelves = [self->shelvesHeight count];
+    
+    return self->numberOfUsedShelves;
+}
+
+// PUBLIC: Worst Fit Bin Packing Algorithm
+// RETURNS: Number of used shelves
+- (NSUInteger) shelfWorstFitAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
+{
+    NSUInteger currentSelectedRectangle = 0;
+    
+    self->numberOfUsedShelves = 0;
+    
+    [self->rectangles removeAllObjects];
+    [self->shelvesHeight removeAllObjects];
+    [self->currentlyUsedShelfArea removeAllObjects];
+    [self->currentlyUsedShelfWidth removeAllObjects];
+    [self->rectanglesPositionsOnShelves removeAllObjects];
+    [self->rectangles addObjectsFromArray:givenRectangles];
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [self->currentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in self->rectangles)
+    {
+        BOOL shouldRotateRectangle = NO;
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        // Find id of shelf where to put new rectangle
+        NSInteger shelfId = [self getIndexOfWorstFitBin:rectangle shouldRotate:(&shouldRotateRectangle)];
+        
+        if (-1 == shelfId)
+        {
+            if (NO == shouldRotateRectangle)
+            {
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            float currentShelfWidth = [[self->currentlyUsedShelfWidth objectAtIndex:shelfId] floatValue];
+            
+            if (NO == shouldRotateRectangle)
+            {
+                [self->currentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                         withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:shelfId], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [self->currentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                         withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:shelfId], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    self->numberOfUsedShelves = [self->shelvesHeight count];
+    
+    return self->numberOfUsedShelves;
+}
+
+// PRIVATE: Block implementation of Worst Fit Bin Packing algorithm (used for GA)
+// RETURNS: Number of used shelves
+NSUInteger (^ffShelfWorstFitAlgorithm2DFF1) (NSMutableArray *) = ^(NSMutableArray * givenRectangles)
+{
+    NSUInteger currentSelectedRectangle = 0;
+    
+    NSMutableArray *ffShelvesHeight = [NSMutableArray new];
+    NSMutableArray *ffCurrentlyUsedShelfArea = [NSMutableArray new];
+    NSMutableArray *ffCurrentlyUsedShelfWidth = [NSMutableArray new];
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [givenRectangles count]; i++)
+    {
+        [ffCurrentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in givenRectangles)
+    {
+        BOOL shouldRotateRectangle = NO;
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        // Find id of shelf where to put new rectangle
+        NSInteger shelfId;
+        
+        /////////////
+        
+        float currentFilledShelfWidth = 0.0f;
+        float fittingShelfHeight = (float)INT_MAX;
+        
+        // Check if there's any open shelf
+        if (0 == [ffShelvesHeight count])
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                shouldRotateRectangle = YES;
+            }
+            else
+            {
+                shouldRotateRectangle = NO;
+            }
+            
+            shelfId = -1;
+        }
+        else
+        {
+            BOOL foundFittingShelf = NO;
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            // Iterate through each shelf
+            for (NSUInteger i = 0; i < [ffShelvesHeight count]; i++)
+            {
+                float currentShelfHeight = [[ffShelvesHeight objectAtIndex:i] floatValue];
+                float currentShelfWidth = [[ffCurrentlyUsedShelfWidth objectAtIndex:i] floatValue];
+                
+                // Check if current rectangle's width or height fitts current shelf
+                if (rectangle.size.height <= currentShelfHeight || rectangle.size.width <= currentShelfHeight)
+                {
+                    if (0 == smallerSide)
+                    {
+                        if (rectangle.size.height <= currentShelfHeight)
+                        {
+                            if (currentShelfWidth + rectangle.size.width > currentFilledShelfWidth && currentShelfWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.height < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.width;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = NO;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.height;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentShelfWidth + rectangle.size.height > currentFilledShelfWidth && currentShelfWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.width < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.height;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = YES;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.width;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (rectangle.size.width <= currentShelfHeight)
+                        {
+                            if (currentShelfWidth + rectangle.size.height > currentFilledShelfWidth && currentShelfWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.width < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.height;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = YES;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.width;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentShelfWidth + rectangle.size.width > currentFilledShelfWidth && currentShelfWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.height < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.width;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = NO;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.height;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (NO == foundFittingShelf)
+            {
+                // Create new shelf
+                if (0 == smallerSide)
+                {
+                    shouldRotateRectangle = YES;
+                }
+                else
+                {
+                    shouldRotateRectangle = NO;
+                }
+                
+                shelfId = -1;
+            }
+        }
+        
+        /////////////
+        
+        if (-1 == shelfId)
+        {
+            if (NO == shouldRotateRectangle)
+            {
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            float currentShelfWidth = [[ffCurrentlyUsedShelfWidth objectAtIndex:shelfId] floatValue];
+            
+            if (NO == shouldRotateRectangle)
+            {
+                [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                     withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                
+                // Update used area on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                     withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                
+                // Update used area on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    return [ffShelvesHeight count];
+};
+
+// PRIVATE: Block implementation of Best Fit Bin Packing algorithm (used for GA)
+// RETURNS: Number of used shelves
+NSUInteger (^ffShelfWorstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *, NSMutableArray *, NSMutableArray *) = ^(NSMutableArray * givenRectangles, NSMutableArray *ffCurrentlyUsedShelfWidth, NSMutableArray *ffShelvesHeight, NSMutableArray *ffCurrentlyUsedShelfArea)
+{
+    NSUInteger currentSelectedRectangle = 0;
+    
+    [ffCurrentlyUsedShelfWidth removeAllObjects];
+    [ffCurrentlyUsedShelfArea removeAllObjects];
+    [ffShelvesHeight removeAllObjects];
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [givenRectangles count]; i++)
+    {
+        [ffCurrentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in givenRectangles)
+    {
+        BOOL shouldRotateRectangle = NO;
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        // Find id of shelf where to put new rectangle
+        NSInteger shelfId;
+        
+        /////////////
+        
+        float currentFilledShelfWidth = 0.0f;
+        float fittingShelfHeight = (float)INT_MAX;
+        
+        // Check if there's any open shelf
+        if (0 == [ffShelvesHeight count])
+        {
+            // Place rectangle so that shorter side is height (flip it if needed)
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            if (0 == smallerSide)
+            {
+                shouldRotateRectangle = YES;
+            }
+            else
+            {
+                shouldRotateRectangle = NO;
+            }
+            
+            shelfId = -1;
+        }
+        else
+        {
+            BOOL foundFittingShelf = NO;
+            // 0 - width is smaller | 1 - height is smaller
+            NSUInteger smallerSide = (rectangle.size.width < rectangle.size.height ? 0 : 1);
+            
+            // Iterate through each shelf
+            for (NSUInteger i = 0; i < [ffShelvesHeight count]; i++)
+            {
+                float currentShelfHeight = [[ffShelvesHeight objectAtIndex:i] floatValue];
+                float currentShelfWidth = [[ffCurrentlyUsedShelfWidth objectAtIndex:i] floatValue];
+                
+                // Check if current rectangle's width or height fitts current shelf
+                if (rectangle.size.height <= currentShelfHeight || rectangle.size.width <= currentShelfHeight)
+                {
+                    if (0 == smallerSide)
+                    {
+                        if (rectangle.size.height <= currentShelfHeight)
+                        {
+                            if (currentShelfWidth + rectangle.size.width > currentFilledShelfWidth && currentShelfWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.height < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.width;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = NO;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.height;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentShelfWidth + rectangle.size.height > currentFilledShelfWidth && currentShelfWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.width < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.height;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = YES;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.width;
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (rectangle.size.width <= currentShelfHeight)
+                        {
+                            if (currentShelfWidth + rectangle.size.height > currentFilledShelfWidth && currentShelfWidth + rectangle.size.height <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.width < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.height;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = YES;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.width;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (currentShelfWidth + rectangle.size.width > currentFilledShelfWidth && currentShelfWidth + rectangle.size.width <= (float)FF_STORAGE_WIDTH)
+                            {
+                                // If there are two shelves with same width, place rectangle on shelf which
+                                // has closer height value to new rectangle
+                                if (currentShelfHeight - rectangle.size.height < fittingShelfHeight)
+                                {
+                                    currentFilledShelfWidth = currentShelfWidth + rectangle.size.width;
+                                    shelfId = i;
+                                    
+                                    shouldRotateRectangle = NO;
+                                    foundFittingShelf = YES;
+                                    
+                                    fittingShelfHeight = currentShelfHeight - rectangle.size.height;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (NO == foundFittingShelf)
+            {
+                // Create new shelf
+                if (0 == smallerSide)
+                {
+                    shouldRotateRectangle = YES;
+                }
+                else
+                {
+                    shouldRotateRectangle = NO;
+                }
+                
+                shelfId = -1;
+            }
+        }
+        
+        /////////////
+        
+        if (-1 == shelfId)
+        {
+            if (NO == shouldRotateRectangle)
+            {
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [ffShelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                [ffCurrentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [ffShelvesHeight count] - 1;
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            float currentShelfWidth = [[ffCurrentlyUsedShelfWidth objectAtIndex:shelfId] floatValue];
+            
+            if (NO == shouldRotateRectangle)
+            {
+                [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                     withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                
+                // Update used area on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [ffCurrentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                     withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                
+                // Update used area on shelf
+                float thisShelfUsedArea = [[ffCurrentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [ffCurrentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        
+        currentSelectedRectangle += 1;
+    }
+    
+    return [ffShelvesHeight count];
+};
+
+// PUBLIC: Worst Fit Decreasing Bin Packing Algorithm
+// RETURNS: Number of used shelves
+- (NSUInteger) shelfWorstFitDecreasingAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
+{
+    NSUInteger currentSelectedRectangle = 0;
+    
+    self->numberOfUsedShelves = 0;
+    
+    [self->rectangles removeAllObjects];
+    [self->shelvesHeight removeAllObjects];
+    [self->currentlyUsedShelfArea removeAllObjects];
+    [self->currentlyUsedShelfWidth removeAllObjects];
+    [self->rectanglesPositionsOnShelves removeAllObjects];
+    [self->rectangles addObjectsFromArray:givenRectangles];
+    
+    // Sort rectangles by height
+    NSMutableArray *specArray = [NSMutableArray array];
+    
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        NSRect rectangle = [[self->rectangles objectAtIndex:i] rectValue];
+        
+        [specArray addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithFloat:rectangle.size.height], [NSNumber numberWithInteger:i], nil]];
+    }
+    
+    NSArray *sortedArray = [specArray sortedArrayUsingFunction:customCompareFunctionDecr context:NULL];
+    NSMutableArray *sortedRectangles = [NSMutableArray new];
+    
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [sortedRectangles addObject:[self->rectangles objectAtIndex:[[[sortedArray objectAtIndex:i] objectAtIndex:1] intValue]]];
+    }
+    
+    // Fill currently used shelf area array with zeros, since they will be replaced in algorithm
+    for (NSUInteger i = 0; i < [self->rectangles count]; i++)
+    {
+        [self->currentlyUsedShelfArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    // Algorithm loop
+    for (NSValue *wrappedRectangle in sortedRectangles)
+    {
+        BOOL shouldRotateRectangle = NO;
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        // Find id of shelf where to put new rectangle
+        NSInteger shelfId = [self getIndexOfWorstFitBin:rectangle shouldRotate:(&shouldRotateRectangle)];
+        
+        if (-1 == shelfId)
+        {
+            if (NO == shouldRotateRectangle)
+            {
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [self->shelvesHeight addObject:[NSNumber numberWithFloat:rectangle.size.width]];
+                [self->currentlyUsedShelfWidth addObject:[NSNumber numberWithFloat:rectangle.size.height]];
+                
+                NSUInteger currentShelfIndex = [self->shelvesHeight count] - 1;
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:currentShelfIndex], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:currentShelfIndex] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:currentShelfIndex withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        else
+        {
+            float currentShelfWidth = [[self->currentlyUsedShelfWidth objectAtIndex:shelfId] floatValue];
+            
+            if (NO == shouldRotateRectangle)
+            {
+                [self->currentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                         withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.width)]];
+                
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:shelfId], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+            else
+            {
+                [self->currentlyUsedShelfWidth replaceObjectAtIndex:shelfId 
+                                                         withObject:[NSNumber numberWithFloat:(currentShelfWidth + rectangle.size.height)]];
+                
+                // Save rectangle position on shelf
+                [self->rectanglesPositionsOnShelves addObject:[NSMutableArray arrayWithObjects:[NSNumber numberWithInteger:shelfId], [NSNumber numberWithInteger:currentSelectedRectangle], nil]];
+                
+                // Update used are on shelf
+                float thisShelfUsedArea = [[self->currentlyUsedShelfArea objectAtIndex:shelfId] floatValue];
+                [self->currentlyUsedShelfArea replaceObjectAtIndex:shelfId withObject:[NSNumber numberWithFloat:(thisShelfUsedArea + rectangle.size.width * rectangle.size.height)]];
+            }
+        }
+        
+        currentSelectedRectangle += 1;
     }
     
     self->numberOfUsedShelves = [self->shelvesHeight count];
@@ -764,7 +2969,7 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
 
 // PUBLIC: Detail Search Bin Packing Algorithm
 // RETURNS: Number of used bins
-- (NSUInteger) detailSearchAlgorithmForGivenRectangles:(NSMutableArray *)givenRectangles
+- (NSUInteger) detailSearchAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
 {
     NSInteger size = [givenRectangles count];
     self->bestShelfNumber = INT_MAX;
@@ -786,6 +2991,7 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
     // Stored only for display informations
     self->permutationCount = permutationCount;
     
+    float shelvesUsedArea = 0.0f;
     float storageUsedArea = 0.0f;
     float storageUsedHeight = 0.0f;
     float storageArea = self->storageWidth * self->storageHeight;
@@ -804,14 +3010,215 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
         storageUsedHeight += [height floatValue];
     }
     
+    // Calculate shelves used area
+    for (NSNumber *shelfArea in self->currentlyUsedShelfArea)
+    {
+        shelvesUsedArea += [shelfArea floatValue];
+    }
+    
+    self->totalShelvesUsedArea = storageUsedHeight * self->storageWidth;
+    self->wastedArea = storageUsedHeight * self->storageWidth - shelvesUsedArea;
+    self->wastedAreaPercentage = self->wastedArea / self->totalShelvesUsedArea * 100.0f;
+    
     // Print report
     NSLog(@"Used storage: %.2f%%", storageUsedArea / storageArea * 100.0f);
-    NSLog(@"Used storage height: %f [%.2f%%]", storageUsedHeight, storageUsedHeight / self->storageHeight * 100.0f);
+    NSLog(@"Used storage height: %.2f [%.2f%%]", storageUsedHeight, storageUsedHeight / self->storageHeight * 100.0f);
     NSLog(@"Number of shelves used: %lu", [self->bestShelvesHeight count]);
+    NSLog(@"Wasted area on shelves: %.2f/%.2f [%.2f%%]", self->wastedArea, self->totalShelvesUsedArea, self->wastedAreaPercentage);
     
     self->numberOfUsedShelves = self->bestShelfNumber;
     
     return self->numberOfUsedShelves;
+}
+
+// PUBLIC: Bin Packing algorithm with usage of Genetic Algorithm
+// RETURNS: Number of bins found in optimal item scheduling
+// NOTE: Fitness function choice: 0 - Next Fit
+//                                1 - First Fit
+//                                2 - Best Fit
+//                                3 - Worst Fit
+- (NSUInteger) searchWithUsageOfGeneticAlgorithmForRectangles:(NSMutableArray *)bpRectangles
+                                    numberOfUnitsInGeneration:(NSUInteger)unitNumber
+                                          numberOfGenerations:(NSUInteger)generationsNumber 
+                                     mutationFactorPercentage:(NSUInteger)mutationFactor 
+                                                elitismFactor:(NSUInteger)elitismFactor 
+                                      numberOfCrossoverPoints:(NSUInteger)crossoverPoints 
+                                     fitnessFunctionSelection:(NSUInteger)choice
+{
+    // Initialize GA factory object
+    NSUInteger currentNumberOfGenerations = 0;
+    GeneticAlgorithmFactory2D *gaFactory = [[GeneticAlgorithmFactory2D alloc] initWithNumberOfUnitsInGeneration:unitNumber 
+                                                                                                rectanglesArray:bpRectangles
+                                                                                                  elitismFactor:elitismFactor
+                                                                                                   storageWidth:self->storageWidth 
+                                                                                                  storageHeight:self->storageHeight];
+    // Create initial population and calculate costs
+    [gaFactory generateInitialPopulation];
+
+    switch (choice)
+    {
+        case 0: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfNextFitAlgorithm2DFF1 
+                                                     fitnessFunction2:ffShelfNextFitAlgorithm2DFF2];
+            break;
+        case 1: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfFirstFitAlgorithm2DFF1 
+                                                     fitnessFunction2:ffShelfFirstFitAlgorithm2DFF2];
+            break;
+        case 2: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfBestFitAlgorithm2DFF1 
+                                                     fitnessFunction2:ffShelfBestFitAlgorithm2DFF2];
+            break;
+        case 3: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfWorstFitAlgorithm2DFF1 
+                                                     fitnessFunction2:ffShelfWorstFitAlgorithm2DFF2];
+            break;
+        default: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfBestFitAlgorithm2DFF1 
+                                                      fitnessFunction2:ffShelfBestFitAlgorithm2DFF2];
+            break;
+    }
+    
+    // GA loop
+    do
+    {
+        currentNumberOfGenerations += 1;
+        
+        // Do mating and mutation
+        [gaFactory mate:elitismFactor];
+        [gaFactory mutate:mutationFactor];
+        
+        // Swap generations and calculate costs
+        [gaFactory generationSwap];
+
+        switch (choice)
+        {
+            case 0: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfNextFitAlgorithm2DFF1 
+                                                         fitnessFunction2:ffShelfNextFitAlgorithm2DFF2];
+                break;
+            case 1: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfFirstFitAlgorithm2DFF1 
+                                                         fitnessFunction2:ffShelfFirstFitAlgorithm2DFF2];
+                break;
+            case 2: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfBestFitAlgorithm2DFF1 
+                                                         fitnessFunction2:ffShelfBestFitAlgorithm2DFF2];
+                break;
+            case 3: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfWorstFitAlgorithm2DFF1 
+                                                         fitnessFunction2:ffShelfWorstFitAlgorithm2DFF2];
+                break;
+            default: [gaFactory calculateGenerationCostForFitnessFunction1:ffShelfBestFitAlgorithm2DFF1 
+                                                          fitnessFunction2:ffShelfBestFitAlgorithm2DFF2];
+                break;
+        }
+        
+    } while (currentNumberOfGenerations < generationsNumber);
+    
+    self->numberOfUsedShelves = gaFactory.lowestCost;
+    
+    NSLog(@"Used storage: %.2f%%", gaFactory.usedStorage);
+    NSLog(@"Used storage height: %.2f [%.2f%%]", gaFactory.usedStorageHeight, gaFactory.usedStorageHeightPercent);
+    NSLog(@"Number of shelves used: %lu", self->numberOfUsedShelves);
+    NSLog(@"Wasted area on shelves: %.2f/%.2f [%.2f%%]", gaFactory.bestShelvesUsage, gaFactory.usedStorageHeight * self->storageWidth, gaFactory.bestShelvesUsage / (gaFactory.usedStorageHeight * self->storageWidth) * 100.0f);
+    
+    return self->numberOfUsedShelves;
+}
+
+// PUBLIC: Calculate storage occupacy
+- (void) showStorageUsageDetails
+{
+    float shelvesUsedArea = 0.0f;
+    float storageUsedArea = 0.0f;
+    float storageUsedHeight = 0.0f;
+    float storageArea = self->storageWidth * self->storageHeight;
+    
+    // Calculate actual area used by added rectangles
+    for (NSValue *wrappedRectangle in self->rectangles)
+    {
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        storageUsedArea += rectangle.size.width * rectangle.size.height;
+    }
+    
+    // Calculate storage used height
+    for (NSNumber *height in self->shelvesHeight)
+    {
+        storageUsedHeight += [height floatValue];
+    }
+    
+    // Calculate shelves used area
+    for (NSNumber *shelfArea in self->currentlyUsedShelfArea)
+    {
+        shelvesUsedArea += [shelfArea floatValue];
+    }
+    
+    self->totalShelvesUsedArea = storageUsedHeight * self->storageWidth;
+    self->wastedArea = storageUsedHeight * self->storageWidth - shelvesUsedArea;
+    self->wastedAreaPercentage = self->wastedArea / self->totalShelvesUsedArea * 100.0f;
+    
+    // Print report
+    NSLog(@"Used storage: %.2f%%", storageUsedArea / storageArea * 100.0f);
+    NSLog(@"Used storage height: %.2f [%.2f%%]", storageUsedHeight, storageUsedHeight / self->storageHeight * 100.0f);
+    NSLog(@"Number of shelves used: %lu", self->numberOfUsedShelves);
+    NSLog(@"Wasted area on shelves: %.2f/%.2f [%.2f%%]", self->wastedArea, self->totalShelvesUsedArea, self->wastedAreaPercentage);
+}
+
+// PRIVATE: Calculate wasted area on shelves
+- (void) calculateWastedArea
+{
+    float totalShelvesWastedArea = 0.0f;
+    
+    NSUInteger currentShelfId = 0;
+    NSMutableArray *shelfUsedArea = [NSMutableArray new];
+    
+    for (NSUInteger i = 0; i < [self->shelvesHeight count]; i++)
+    {
+        [shelfUsedArea addObject:[NSNumber numberWithFloat:0.0f]];
+    }
+    
+    self->totalShelvesUsedArea = 0.0f;
+    self->wastedArea = 0.0f;
+    self->wastedAreaPercentage = 0.0f;
+    
+    for (NSMutableArray *positionAndRectangle in self->rectanglesPositionsOnShelves)
+    {
+        NSUInteger rectangleShelf = [[positionAndRectangle objectAtIndex:0] intValue];
+        NSUInteger originalRectangleIndex = [[positionAndRectangle objectAtIndex:1] intValue];
+        
+        if (rectangleShelf == currentShelfId)
+        {
+            float currentShelfUsedArea = [[shelfUsedArea objectAtIndex:rectangleShelf] floatValue];
+            NSRect currentRectangle = [[self->rectangles objectAtIndex:originalRectangleIndex] rectValue];
+            
+            currentShelfUsedArea += currentRectangle.size.height * currentRectangle.size.width;
+            [shelfUsedArea replaceObjectAtIndex:rectangleShelf withObject:[NSNumber numberWithFloat:currentShelfUsedArea]];
+        }
+        else
+        {
+            currentShelfId += 1;
+            
+            float currentShelfUsedArea = [[shelfUsedArea objectAtIndex:rectangleShelf] floatValue];
+            NSRect currentRectangle = [[self->rectangles objectAtIndex:originalRectangleIndex] rectValue];
+            
+            currentShelfUsedArea += currentRectangle.size.height * currentRectangle.size.width;
+            [shelfUsedArea replaceObjectAtIndex:rectangleShelf withObject:[NSNumber numberWithFloat:currentShelfUsedArea]];
+        }
+    }
+    
+    for (NSUInteger i = 0; i < [shelfUsedArea count]; i++)
+    {
+        float currentShelfUsedArea = [[shelfUsedArea objectAtIndex:i] floatValue];
+        totalShelvesWastedArea += ([[self->shelvesHeight objectAtIndex:i] floatValue] * self->storageWidth) - currentShelfUsedArea;
+    }
+    
+    for (NSNumber *shelfHeight in self->shelvesHeight)
+    {
+        self->totalShelvesUsedArea += [shelfHeight floatValue] * self->storageWidth;
+    }
+    
+    self->wastedArea = totalShelvesWastedArea;
+    self->wastedAreaPercentage = totalShelvesWastedArea / self->totalShelvesUsedArea * 100.0f;
+}
+
+// PRIVATE: Sorting method
+NSComparisonResult customCompareFunctionDecr(NSArray* first, NSArray* second, void* context)
+{
+    id firstValue = [first objectAtIndex:0];
+    id secondValue = [second objectAtIndex:0];
+    return [secondValue compare:firstValue];
 }
 
 // PRIVATE: Recursive method which generates permutations with usage of backstepping algorithm
@@ -835,7 +3242,7 @@ NSUInteger (^ffFirstFitAlgorithm2DHelp) (NSMutableArray *, NSMutableArray *, NSM
         }
         
         // Now we need to check for current item order how many bins we need
-        NSUInteger shelfNumber = [self shelfFirstFitAlgorithmForGivenRectangles:newRectanglesPermutation];
+        NSUInteger shelfNumber = [self shelfFirstFitAlgorithm2DForGivenRectangles:newRectanglesPermutation];
         
         // Locate through all permutations best item combination and save it
         float currentWidthUsagePercentage = [self shelvesWidthUsagePercentage];
@@ -895,51 +3302,6 @@ void swap2D(int *first, int *second)
     return usedShelvesWidth / totalShelvesWidth;
 }
 
-- (NSUInteger) searchWithUsageOfGeneticAlgorithmForRectangles:(NSMutableArray *)bpRectangles
-                                    numberOfUnitsInGeneration:(NSUInteger)unitNumber
-                                          numberOfGenerations:(NSUInteger)generationsNumber 
-                                     mutationFactorPercentage:(NSUInteger)mutationFactor 
-                                                elitismFactor:(NSUInteger)elitismFactor 
-                                      numberOfCrossoverPoints:(NSUInteger)crossoverPoints
-{
-    // Initialize GA factory object
-    NSUInteger currentNumberOfGenerations = 0;
-    GeneticAlgorithmFactory2D *gaFactory = [[GeneticAlgorithmFactory2D alloc] initWithNumberOfUnitsInGeneration:unitNumber 
-                                                                                                rectanglesArray:bpRectangles
-                                                                                                  elitismFactor:elitismFactor
-                                                                                                   storageWidth:self->storageWidth 
-                                                                                                  storageHeight:self->storageHeight];
-    // Create initial population and calculate costs
-    [gaFactory generateInitialPopulation];
-    [gaFactory calculateGenerationCost:ffFirstFitAlgorithm2D 
-                   helpFitnessFunction:ffFirstFitAlgorithm2DHelp];
-    
-    // GA loop
-    do
-    {
-        currentNumberOfGenerations += 1;
-        
-        // Do mating and mutation
-        [gaFactory mate:elitismFactor];
-        [gaFactory mutate:mutationFactor];
-        
-        // Swap generations and calculate costs
-        [gaFactory generationSwap];
-        [gaFactory calculateGenerationCost:ffFirstFitAlgorithm2D 
-                       helpFitnessFunction:ffFirstFitAlgorithm2DHelp];
-        
-    } while (currentNumberOfGenerations < generationsNumber);
-    
-    self->numberOfUsedShelves = gaFactory.lowestCost;
-    
-    NSLog(@"Used storage: %.2f%%", gaFactory.usedStorage);
-    NSLog(@"Used storage height: %f [%.2f%%]", gaFactory.usedStorageHeight, gaFactory.usedStorageHeightPercent);
-    NSLog(@"Number of shelves used: %lu", self->numberOfUsedShelves);
-
-    
-    return self->numberOfUsedShelves;
-}
-
 // PRIVATE: Find best fitting bin for given item
 // RETURNS: Best fitting bin index
 - (NSInteger) getIndexOfBestFitBin:(NSRect)newRectangle 
@@ -947,11 +3309,12 @@ void swap2D(int *first, int *second)
 {
     NSInteger index = -1;
     float currentFilledShelfWidth = (float)INT_MAX;
+    float fittingShelfHeight = (float)INT_MAX;
     
     // Check if there's any open shelf
     if (0 == [self->shelvesHeight count])
     {
-        // Place rectangle so that shorter side is height (flip it if needed)
+        // Place rectangle so that shorter side is height (rotate it if needed)
         // 0 - width is smaller | 1 - height is smaller
         NSUInteger smallerSide = (newRectangle.size.width < newRectangle.size.height ? 0 : 1);
         
@@ -985,24 +3348,38 @@ void swap2D(int *first, int *second)
                 {
                     if (newRectangle.size.height <= currentShelfHeight)
                     {
-                        if (currentShelfWidth + newRectangle.size.width <= currentFilledShelfWidth && currentShelfWidth + newRectangle.size.width <= self->storageWidth)
+                        if (currentShelfWidth + newRectangle.size.width < currentFilledShelfWidth && currentShelfWidth + newRectangle.size.width <= self->storageWidth)
                         {
-                            currentFilledShelfWidth = currentShelfWidth + newRectangle.size.width;
-                            index = i;
-                            
-                            *rotation = NO;
-                            foundFittingShelf = YES;
+                            // If there are two shelves with same width, place rectangle on shelf which
+                            // has closer height value to new rectangle
+                            if (currentShelfHeight - newRectangle.size.height < fittingShelfHeight)
+                            {
+                                currentFilledShelfWidth = currentShelfWidth + newRectangle.size.width;
+                                index = i;
+                                
+                                *rotation = NO;
+                                foundFittingShelf = YES;
+                                
+                                fittingShelfHeight = currentShelfHeight - newRectangle.size.height;
+                            }
                         }
                     }
                     else
                     {
-                        if (currentShelfWidth + newRectangle.size.height <= currentFilledShelfWidth && currentShelfWidth + newRectangle.size.height <= self->storageWidth)
+                        if (currentShelfWidth + newRectangle.size.height < currentFilledShelfWidth && currentShelfWidth + newRectangle.size.height <= self->storageWidth)
                         {
-                            currentFilledShelfWidth = currentShelfWidth + newRectangle.size.height;
-                            index = i;
-                            
-                            *rotation = YES;
-                            foundFittingShelf = YES;
+                            // If there are two shelves with same width, place rectangle on shelf which
+                            // has closer height value to new rectangle
+                            if (currentShelfHeight - newRectangle.size.width < fittingShelfHeight)
+                            {
+                                currentFilledShelfWidth = currentShelfWidth + newRectangle.size.height;
+                                index = i;
+                                
+                                *rotation = YES;
+                                foundFittingShelf = YES;
+                                
+                                fittingShelfHeight = currentShelfHeight - newRectangle.size.width;
+                            }
                         }
                     }
                 }
@@ -1010,24 +3387,38 @@ void swap2D(int *first, int *second)
                 {
                     if (newRectangle.size.width <= currentShelfHeight)
                     {
-                        if (currentShelfWidth + newRectangle.size.height <= currentFilledShelfWidth && currentShelfWidth + newRectangle.size.height <= self->storageWidth)
+                        if (currentShelfWidth + newRectangle.size.height < currentFilledShelfWidth && currentShelfWidth + newRectangle.size.height <= self->storageWidth)
                         {
-                            currentFilledShelfWidth = currentShelfWidth + newRectangle.size.height;
-                            index = i;
-                            
-                            *rotation = YES;
-                            foundFittingShelf = YES;
+                            // If there are two shelves with same width, place rectangle on shelf which
+                            // has closer height value to new rectangle
+                            if (currentShelfHeight - newRectangle.size.width < fittingShelfHeight)
+                            {
+                                currentFilledShelfWidth = currentShelfWidth + newRectangle.size.height;
+                                index = i;
+                                
+                                *rotation = YES;
+                                foundFittingShelf = YES;
+                                
+                                fittingShelfHeight = currentShelfHeight - newRectangle.size.width;
+                            }
                         }
                     }
                     else
                     {
-                        if (currentShelfWidth + newRectangle.size.width <= currentFilledShelfWidth && currentShelfWidth + newRectangle.size.width <= self->storageWidth)
+                        if (currentShelfWidth + newRectangle.size.width < currentFilledShelfWidth && currentShelfWidth + newRectangle.size.width <= self->storageWidth)
                         {
-                            currentFilledShelfWidth = currentShelfWidth + newRectangle.size.width;
-                            index = i;
-                            
-                            *rotation = NO;
-                            foundFittingShelf = YES;
+                            // If there are two shelves with same width, place rectangle on shelf which
+                            // has closer height value to new rectangle
+                            if (currentShelfHeight - newRectangle.size.height < fittingShelfHeight)
+                            {
+                                currentFilledShelfWidth = currentShelfWidth + newRectangle.size.width;
+                                index = i;
+                                
+                                *rotation = NO;
+                                foundFittingShelf = YES;
+                                
+                                fittingShelfHeight = currentShelfHeight - newRectangle.size.height;
+                            }
                         }
                     }
                 }
@@ -1053,33 +3444,146 @@ void swap2D(int *first, int *second)
     return index;
 }
 
-// PUBLIC: Calculate storage occupacy
-- (void) showStorageUsageDetails
+// PRIVATE: Find worst fitting bin for given item
+// RETURNS: Worst fitting bin index
+- (NSInteger) getIndexOfWorstFitBin:(NSRect)newRectangle 
+                      shouldRotate:(BOOL *)rotation;
 {
-    float storageUsedArea = 0.0f;
-    float storageUsedHeight = 0.0f;
-    float storageArea = self->storageWidth * self->storageHeight;
+    NSInteger index = -1;
+    float currentFilledShelfWidth = 0.0f;
+    float fittingShelfHeight = (float)INT_MAX;
     
-    // Calculate actual area used by added rectangles
-    for (NSValue *wrappedRectangle in self->rectangles)
+    // Check if there's any open shelf
+    if (0 == [self->shelvesHeight count])
     {
-        NSRect rectangle = [wrappedRectangle rectValue];
+        // Place rectangle so that shorter side is height (rotate it if needed)
+        // 0 - width is smaller | 1 - height is smaller
+        NSUInteger smallerSide = (newRectangle.size.width < newRectangle.size.height ? 0 : 1);
         
-        storageUsedArea += rectangle.size.width * rectangle.size.height;
+        if (0 == smallerSide)
+        {
+            *rotation = YES;
+        }
+        else
+        {
+            *rotation = NO;
+        }
+        
+        index = -1;
     }
-    
-    // Calculate storage used height
-    for (NSNumber *height in self->shelvesHeight)
+    else
     {
-        storageUsedHeight += [height floatValue];
+        BOOL foundFittingShelf = NO;
+        // 0 - width is smaller | 1 - height is smaller
+        NSUInteger smallerSide = (newRectangle.size.width < newRectangle.size.height ? 0 : 1);
+        
+        // Iterate through each shelf
+        for (NSUInteger i = 0; i < [self->shelvesHeight count]; i++)
+        {
+            float currentShelfHeight = [[self->shelvesHeight objectAtIndex:i] floatValue];
+            float currentShelfWidth = [[self->currentlyUsedShelfWidth objectAtIndex:i] floatValue];
+            
+            // Check if current rectangle's width or height fitts current shelf
+            if (newRectangle.size.height <= currentShelfHeight || newRectangle.size.width <= currentShelfHeight)
+            {
+                if (0 == smallerSide)
+                {
+                    if (newRectangle.size.height <= currentShelfHeight)
+                    {
+                        if (currentShelfWidth + newRectangle.size.width > currentFilledShelfWidth && currentShelfWidth + newRectangle.size.width <= self->storageWidth)
+                        {
+                            // If there are two shelves with same width, place rectangle on shelf which
+                            // has closer height value to new rectangle
+                            if (currentShelfHeight - newRectangle.size.height < fittingShelfHeight)
+                            {
+                                currentFilledShelfWidth = currentShelfWidth + newRectangle.size.width;
+                                index = i;
+                                
+                                *rotation = NO;
+                                foundFittingShelf = YES;
+                                
+                                fittingShelfHeight = currentShelfHeight - newRectangle.size.height;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (currentShelfWidth + newRectangle.size.height > currentFilledShelfWidth && currentShelfWidth + newRectangle.size.height <= self->storageWidth)
+                        {
+                            // If there are two shelves with same width, place rectangle on shelf which
+                            // has closer height value to new rectangle
+                            if (currentShelfHeight - newRectangle.size.width < fittingShelfHeight)
+                            {
+                                currentFilledShelfWidth = currentShelfWidth + newRectangle.size.height;
+                                index = i;
+                                
+                                *rotation = YES;
+                                foundFittingShelf = YES;
+                                
+                                fittingShelfHeight = currentShelfHeight - newRectangle.size.width;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (newRectangle.size.width <= currentShelfHeight)
+                    {
+                        if (currentShelfWidth + newRectangle.size.height > currentFilledShelfWidth && currentShelfWidth + newRectangle.size.height <= self->storageWidth)
+                        {
+                            // If there are two shelves with same width, place rectangle on shelf which
+                            // has closer height value to new rectangle
+                            if (currentShelfHeight - newRectangle.size.width < fittingShelfHeight)
+                            {
+                                currentFilledShelfWidth = currentShelfWidth + newRectangle.size.height;
+                                index = i;
+                                
+                                *rotation = YES;
+                                foundFittingShelf = YES;
+                                
+                                fittingShelfHeight = currentShelfHeight - newRectangle.size.width;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (currentShelfWidth + newRectangle.size.width > currentFilledShelfWidth && currentShelfWidth + newRectangle.size.width <= self->storageWidth)
+                        {
+                            // If there are two shelves with same width, place rectangle on shelf which
+                            // has closer height value to new rectangle
+                            if (currentShelfHeight - newRectangle.size.height < fittingShelfHeight)
+                            {
+                                currentFilledShelfWidth = currentShelfWidth + newRectangle.size.width;
+                                index = i;
+                                
+                                *rotation = NO;
+                                foundFittingShelf = YES;
+                                
+                                fittingShelfHeight = currentShelfHeight - newRectangle.size.height;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (NO == foundFittingShelf)
+        {
+            // Create new shelf
+            if (0 == smallerSide)
+            {
+                *rotation = YES;
+            }
+            else
+            {
+                *rotation = NO;
+            }
+            
+            index = -1;
+        }
     }
     
-    // Print report
-    NSLog(@"Used storage: %.2f%%", storageUsedArea / storageArea * 100.0f);
-    NSLog(@"Used storage height: %f [%.2f%%]", storageUsedHeight, storageUsedHeight / self->storageHeight * 100.0f);
-    NSLog(@"Number of shelves used: %lu", self->numberOfUsedShelves);
+    return index;
 }
-
-// PRIVATE: 
 
 @end
