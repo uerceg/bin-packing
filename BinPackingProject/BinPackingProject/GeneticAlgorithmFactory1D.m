@@ -17,15 +17,17 @@
     @private NSUInteger lowestCost;
     @private NSUInteger indexOfLowestCostItem;
     
+    @private NSMutableArray *bins;
     @private NSMutableArray *items;
     @private NSMutableArray *itemsElite;
     @private NSMutableArray *dummyItems;
     @private NSMutableArray *newGeneration;
     @private NSMutableArray *currentGeneration;
     @private NSMutableArray *currentGenerationCost;
+    @private NSMutableArray *currentGenerationBins;
 }
 
-@synthesize lowestCost;
+@synthesize lowestCost, bins;
 
 // INIT: Custom initializator which takes item array and 
 - (id) initWithNumberOfUnitsInGeneration:(NSUInteger)numberOfUnits 
@@ -38,6 +40,7 @@
         self->elitismFactor = elitism;
         
         // Save original array of items
+        self->bins = [NSMutableArray new];
         self->items = [NSMutableArray new];
         [self->items addObjectsFromArray:itemsArray];
         
@@ -45,6 +48,7 @@
         self->newGeneration = [NSMutableArray array];
         self->currentGeneration = [NSMutableArray array];
         self->currentGenerationCost = [NSMutableArray new];
+        self->currentGenerationBins = [NSMutableArray array];
         
         // Initialize GA fields
         self->numberOfItemsInUnit = [self->items count];
@@ -315,17 +319,22 @@
 }
 
 // PUBLIC: Method which calculates cost per each unit in generation based on fitness function
-- (void) calculateGenerationCost:(NSUInteger (^) (NSMutableArray*)) fitnessFunction
+- (void) calculateGenerationCostWithFitnessFunction:(NSUInteger (^) (NSMutableArray *, NSMutableArray *)) ffunction
 {
+    NSMutableArray *currentBins = [NSMutableArray new];
+    NSMutableArray *bestCurrentBins = [NSMutableArray new];
+    
     [self->itemsElite removeAllObjects];
     [self->currentGenerationCost removeAllObjects];
+    [self->currentGenerationBins removeAllObjects];
     
     // Run fitness function on all items and calculate cost for each item
     for (NSMutableArray *item in self->currentGeneration)
     {
-        NSUInteger itemCost = fitnessFunction(item);
+        NSUInteger itemCost = ffunction(item, currentBins);
         
         [self->currentGenerationCost addObject:[NSNumber numberWithInteger:itemCost]];
+        [self->currentGenerationBins addObject:[NSMutableArray arrayWithArray:currentBins]];
     }
     
     // Find out which units are elite one and save them
@@ -343,7 +352,16 @@
         [self->itemsElite addObject:[self->currentGeneration objectAtIndex:[[[sortedArray objectAtIndex:i] objectAtIndex:1] intValue]]];
     }
     
-    self->lowestCost = [[[sortedArray objectAtIndex:0] objectAtIndex:0] floatValue];
+    [bestCurrentBins addObjectsFromArray:[self->currentGenerationBins objectAtIndex:[[[sortedArray objectAtIndex:0] objectAtIndex:1]intValue]]];
+    
+    int currentLowestCost = [[[sortedArray objectAtIndex:0] objectAtIndex:0] intValue];
+    
+    if (self->lowestCost > currentLowestCost)
+    {
+        self->lowestCost = currentLowestCost;
+        [self->bins removeAllObjects];
+        [self->bins addObjectsFromArray:bestCurrentBins];
+    }
 }
 
 // PRIVATE: Sorting method
@@ -352,23 +370,6 @@ NSComparisonResult customCompareFunction1D(NSArray* first, NSArray* second, void
     id firstValue = [first objectAtIndex:0];
     id secondValue = [second objectAtIndex:0];
     return [firstValue compare:secondValue];
-}
-
-// PRIVATE: Method for calculating lowest cost unit and remembering its number of used bins and its index in item array
-- (void) locateLowestCostItem
-{
-    NSUInteger currentItemCost;
-    
-    for (NSNumber *cost in self->currentGenerationCost)
-    {
-        currentItemCost = [cost intValue];
-        
-        if (currentItemCost < self->lowestCost)
-        {
-            self->lowestCost = currentItemCost;
-            self->indexOfLowestCostItem = [self->currentGenerationCost indexOfObject:cost];
-        }
-    }
 }
 
 // PRIVATE: Shuffle items in array in order to generate new combination of items
