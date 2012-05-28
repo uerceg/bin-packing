@@ -12,6 +12,7 @@
 
 @property (nonatomic, readonly) NSUInteger lowestCost;
 @property (nonatomic, readonly) float usedStorage;
+@property (nonatomic, readonly) float bestShelvesUsage;
 @property (nonatomic, readonly) float usedStorageHeight;
 @property (nonatomic, readonly) float usedStorageHeightPercent;
 
@@ -25,7 +26,7 @@
 - (void) generationSwap;
 - (void) generateInitialPopulation;
 - (void) mutate:(NSUInteger)mutationFactorPercentage;
-- (void) calculateGenerationCost:(NSUInteger (^) (NSMutableArray *))fitnessFunction 
-             helpFitnessFunction:(NSUInteger (^) (NSMutableArray *, NSMutableArray *, NSMutableArray *))helpFF;
+- (void) calculateGenerationCostForFitnessFunction1:(NSUInteger (^) (NSMutableArray *))ffunction1 
+                                   fitnessFunction2:(NSUInteger (^) (NSMutableArray *, NSMutableArray *, NSMutableArray *, NSMutableArray *))ffunction2;
 
 @end
