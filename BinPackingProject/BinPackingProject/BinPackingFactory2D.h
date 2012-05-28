@@ -14,18 +14,25 @@
 @property (nonatomic) NSUInteger permutationCount;
 
 - (id) initWithStorageWidth:(float)width 
-                storageHeight:(float)height;
+              storageHeight:(float)height 
+       storageHeightLimited:(BOOL)limit;
 
-- (NSUInteger) shelfNextFitAlgorithmForGivenRectangles:(NSMutableArray *)givenRectangles;
-- (NSUInteger) shelfFirstFitAlgorithmForGivenRectangles:(NSMutableArray *)givenRectangles;
-- (NSUInteger) shelfBestFitAlgorithmForGivenRectangles:(NSMutableArray *)givenRectangles;
-- (NSUInteger) detailSearchAlgorithmForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) shelfNextFitAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) shelfNextFitDecreasingAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) shelfFirstFitAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) shelfFirstFitDecreasingAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) shelfBestFitAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) shelfBestFitDecreasingAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) shelfWorstFitAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) shelfWorstFitDecreasingAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
+- (NSUInteger) detailSearchAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
 - (NSUInteger) searchWithUsageOfGeneticAlgorithmForRectangles:(NSMutableArray *)bpRectangles
                                     numberOfUnitsInGeneration:(NSUInteger)unitNumber
                                           numberOfGenerations:(NSUInteger)generationsNumber 
                                      mutationFactorPercentage:(NSUInteger)mutationFactor 
                                                 elitismFactor:(NSUInteger)elitismFactor 
-                                      numberOfCrossoverPoints:(NSUInteger)crossoverPoints;
+                                      numberOfCrossoverPoints:(NSUInteger)crossoverPoints 
+                                     fitnessFunctionSelection:(NSUInteger)choice;
 - (void) showStorageUsageDetails;
 
 @end
