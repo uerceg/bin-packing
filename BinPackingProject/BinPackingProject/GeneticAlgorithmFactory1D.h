@@ -11,6 +11,7 @@
 @interface GeneticAlgorithmFactory1D : NSObject
 
 @property (nonatomic, readonly) NSUInteger lowestCost;
+@property (nonatomic, strong, readonly) NSMutableArray *bins;
 
 - (id) initWithNumberOfUnitsInGeneration:(NSUInteger)numberOfUnits 
                               itemsArray:(NSMutableArray *)itemsArray 
@@ -20,6 +21,6 @@
 - (void) generateInitialPopulation;
 - (void) mate:(NSUInteger)crossingPointsNumber;
 - (void) mutate:(NSUInteger)mutationFactorPercentage;
-- (void) calculateGenerationCost:(NSUInteger (^) (NSMutableArray *)) fitnessFunction;
+- (void) calculateGenerationCostWithFitnessFunction:(NSUInteger (^) (NSMutableArray *, NSMutableArray *)) ffunction;
 
 @end
