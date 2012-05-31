@@ -35,9 +35,6 @@
                                            elitismFactor:(NSUInteger)elitismFactor 
                                  numberOfCrossoverPoints:(NSUInteger)crossoverPoints 
                                 fitnessFunctionSelection:(NSUInteger)choice;
-- (NSUInteger) searchWithUsageOfPSOAlgorithmForItems:(NSMutableArray *)bpItems 
-                                  numberOfIterations:(NSUInteger)iterations 
-                            numberOfParticlesInSwarm:(NSUInteger)numberOfParticles;
 
 - (void) showStorageUsageDetails;
 
