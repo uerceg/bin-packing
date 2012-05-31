@@ -1029,38 +1029,6 @@ NSUInteger (^ffWorstFitAlgorithm1DFF2) (NSMutableArray *, NSMutableArray *) = ^(
     return gaFactory.lowestCost;
 }
 
-// PUBLIC: Bin Packing algorithm with usage of PSO Algorithm
-// RETURNS: Number of bins found in optimal item scheduling
-// NOTE: USELESS FOR NOW. DON'T USE. NOT WORKING.
-- (NSUInteger) searchWithUsageOfPSOAlgorithmForItems:(NSMutableArray *)bpItems 
-                                  numberOfIterations:(NSUInteger)iterations 
-                            numberOfParticlesInSwarm:(NSUInteger)numberOfParticles
-{
-    // Initialize PSO factory object
-    NSUInteger currentNumberOfIterations = 0;
-    PSOAlgorithmFactory1D *psoFactory = [[PSOAlgorithmFactory1D alloc] initWithNumberOfParticlesInSwarm:numberOfParticles 
-                                                                                     numberOfIterations:iterations 
-                                                                                         particlesArray:bpItems];
-    
-    [psoFactory generateInitialSwarm];
-    [psoFactory calculateBestCandidateFromSwarm:ffFirstFitAlgorithm1DFF1];
-    [psoFactory calculateVelocityForNextStep:ffFirstFitAlgorithm1DFF1];
-    
-    do
-    {
-        currentNumberOfIterations += 1;
-        
-        [psoFactory addVelocityToParticlesInSwarm];
-        [psoFactory calculateBestCandidateFromSwarm:ffFirstFitAlgorithm1DFF1];
-        [psoFactory calculateVelocityForNextStep:ffFirstFitAlgorithm1DFF1];
-        
-        [psoFactory swarmSwap];
-        
-    } while (currentNumberOfIterations < iterations);
-    
-    return psoFactory.allTimeBestParticleFitnessValue;
-}
-
 // PRIVATE: Recursive method which generates permutations with usage of backstepping algorithm
 //          and calculates number of used bins with usage of FF
 - (void) permutationArray1D:(int *) array 
