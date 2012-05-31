@@ -2988,9 +2988,6 @@ NSUInteger (^ffShelfWorstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *,
                sizeOfArray:size 
                 givenItems:givenRectangles];
     
-    // Stored only for display informations
-    self->permutationCount = permutationCount;
-    
     float shelvesUsedArea = 0.0f;
     float storageUsedArea = 0.0f;
     float storageUsedHeight = 0.0f;
@@ -3233,7 +3230,7 @@ NSComparisonResult customCompareFunctionDecr(NSArray* first, NSArray* second, vo
         
     {
         NSMutableArray *newRectanglesPermutation = [NSMutableArray new];
-        permutationCount += 1;
+        self->permutationCount += 1;
         
         for (NSUInteger i = 0; i < size; ++i)
         {
