@@ -159,14 +159,7 @@ int main(int argc, const char * argv[])
 //                                         algorithmGranulation:5];
 //        [binPackingFactory1D showStorageUsageDetails];
 //        NSLog(@"-------------------------------------");
-//
-////        NSLog(@"[PM] Number of used bins: %lu", [binPackingFactory1D detailSearchAlgorithm1DForGivenItems:inputItems 
-////                                                                                        withBinCapacity:1.0f]);
-////        NSLog(@"[PM] Number of permutations: %lu", [binPackingFactory1D permutationCount]);
-////
-////        NSLog(@"[PSO] Number of used bins: %lu", [binPackingFactory1D searchWithUsageOfPSOAlgorithmForItems:inputItems 
-////                                                                                         numberOfIterations:50 
-////                                                                                   numberOfParticlesInSwarm:10]);
+
 //        
 //        // Test for BinPackingFactory2D
 //        NSMutableArray *inputRectangles = [NSMutableArray new];
