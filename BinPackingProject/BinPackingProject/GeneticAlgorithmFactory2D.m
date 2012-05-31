@@ -33,7 +33,7 @@
 
 @synthesize lowestCost, usedStorage, usedStorageHeight, usedStorageHeightPercent, bestShelvesUsage;
 
-// INIT: Custom initializator which takes item array and 
+// INIT: Custom initializator
 - (id) initWithNumberOfUnitsInGeneration:(NSUInteger)numberOfUnits 
                          rectanglesArray:(NSMutableArray *)rectanglesArray
                            elitismFactor:(NSUInteger)elitism 
