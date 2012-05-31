@@ -7,7 +7,6 @@
 //
 
 #import "BinPackingFactory1D.h"
-#import "PSOAlgorithmFactory1D.h"
 #import "GeneticAlgorithmFactory1D.h"
 
 #define FF_BIN_CAPACITY         1.0f
