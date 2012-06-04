@@ -6384,7 +6384,7 @@ void swap3D(int *first, int *second)
         totalBoxesArea += box.width * box.height * box.length;
     }
     
-    NSLog(@"Used storage: %.2f%%", usedSliceLevelsArea / totalStorageArea * 100.0f);
+    NSLog(@"Used storage: / storage area: %.2f / %.2f [%.2f%%]", usedSliceLevelsArea, totalStorageArea, usedSliceLevelsArea / totalStorageArea * 100.0f);
     NSLog(@"In theory optimal usage area: %.2f%%", totalBoxesArea / totalStorageArea * 100.0f);
     NSLog(@"Wasted space from used area: %.2f%%", (usedSliceLevelsArea - totalBoxesArea) / usedSliceLevelsArea * 100.0f);
 }

@@ -1154,23 +1154,30 @@ void swap1D(int *first, int *second)
 // PUBLIC: Calculate storage occupacy
 - (void) showStorageUsageDetails
 {
+    float itemSum = 0.0f;
     float wastedLenght = 0.0f;
+    float theoryMinimalBinNumber = 0.0f;
+    
+    for (NSNumber *item in self->items)
+    {
+        itemSum += [item floatValue];
+    }
+    
+    theoryMinimalBinNumber = ceilf(itemSum);
     
     for (NSNumber *binContent in self->bins)
     {
         wastedLenght += self->binCapacity - [binContent floatValue];
     }
     
-    float totalLength = self->binCapacity * self->maxNumberOfBins;
-    
     // Print report if there are bins information (in harmonics case there isn't, fix maybe)
+    NSLog(@"Number of used bins / theoretical minimum: %lu / %.0f", self->numberOfUsedBins, theoryMinimalBinNumber);
+    
     if (0 != [self->bins count])
     {
-        NSLog(@"Used storage: %.2f%%", self->numberOfUsedBins * self->binCapacity / totalLength * 100.0f);
-        NSLog(@"Wasted length of bins: %.2f/%.2f [%.2f%%]", wastedLenght, self->numberOfUsedBins * self->binCapacity, wastedLenght / (self->numberOfUsedBins * self->binCapacity) * 100.0f);
+        NSLog(@"Used storage more than theory optimal: %.2f%%", (self->numberOfUsedBins - theoryMinimalBinNumber) / theoryMinimalBinNumber * 100.0f);
+        NSLog(@"Wasted space in used bins: %.2f/%.2f [%.2f%%]", wastedLenght, self->numberOfUsedBins * self->binCapacity, wastedLenght / (self->numberOfUsedBins * self->binCapacity) * 100.0f);
     }
-    
-    NSLog(@"Number of bins used: %lu", self->numberOfUsedBins);
 }
 
 // PRIVATE: Write how items are packed in bins

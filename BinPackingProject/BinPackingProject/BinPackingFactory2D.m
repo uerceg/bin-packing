@@ -3345,8 +3345,8 @@ NSUInteger (^ffShelfWorstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *,
     self->wastedAreaPercentage = self->wastedArea / self->totalShelvesUsedArea * 100.0f;
     
     // Print report
-    NSLog(@"Used storage: %.2f%%", storageUsedArea / storageArea * 100.0f);
-    NSLog(@"Used storage height: %.2f / %.2f", storageUsedHeight, estimatedOptimalHeight);
+    NSLog(@"Used storage / storage area: %.2f / %.2f [%.2f%%]", storageUsedArea, storageArea, storageUsedArea / storageArea * 100.0f);
+    NSLog(@"Used storage height / estimated optimal: %.2f / %.2f", storageUsedHeight, estimatedOptimalHeight);
     NSLog(@"Number of shelves used: %lu", self->numberOfUsedShelves);
     NSLog(@"Wasted area on shelves: %.2f/%.2f [%.2f%%]", self->wastedArea, self->totalShelvesUsedArea, self->wastedAreaPercentage);
 }
@@ -3391,8 +3391,8 @@ NSUInteger (^ffShelfWorstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *,
     self->wastedAreaPercentage = self->wastedArea / self->totalShelvesUsedArea * 100.0f;
     
     // Print report
-    NSLog(@"Used storage: %.2f%%", storageUsedArea / storageArea * 100.0f);
-    NSLog(@"Used storage height: %.2f / %.2f", storageUsedHeight, estimatedOptimalHeight);
+    NSLog(@"Used storage / storage area: %.2f / %.2f [%.2f%%]", storageUsedArea, storageArea, storageUsedArea / storageArea * 100.0f);
+    NSLog(@"Used storage height / estimated optimal: %.2f / %.2f", storageUsedHeight, estimatedOptimalHeight);
     NSLog(@"Wasted area of used area: %.2f/%.2f [%.2f%%]", self->wastedArea, self->totalShelvesUsedArea, self->wastedAreaPercentage);
 }
 
