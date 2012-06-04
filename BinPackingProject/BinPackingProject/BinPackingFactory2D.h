@@ -33,6 +33,8 @@
                                                 elitismFactor:(NSUInteger)elitismFactor 
                                       numberOfCrossoverPoints:(NSUInteger)crossoverPoints 
                                      fitnessFunctionSelection:(NSUInteger)choice;
+- (void) bottomLeftAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles;
 - (void) showStorageUsageDetails;
+- (void) showBottomLeftStorageUsageDetails;
 
 @end
