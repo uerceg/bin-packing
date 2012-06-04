@@ -3120,6 +3120,7 @@ NSUInteger (^ffShelfWorstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *,
 }
 
 // PUBLIC: Bottom-left Bin Packing Algorithm
+// NOTE: This algorithm must be improved in order to take all cases in considerations!
 - (void) bottomLeftAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
 {
     NSMutableArray *availablePoints = [NSMutableArray new];
