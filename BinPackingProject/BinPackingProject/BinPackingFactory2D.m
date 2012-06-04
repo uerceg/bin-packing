@@ -38,6 +38,9 @@
     @private NSMutableArray *bestShelvesHeight;
     @private NSMutableArray *bestShelvesUsedWidth;
     @private NSMutableArray *bestRectangleCombination;
+    
+    @private NSMutableDictionary *rectanglesPerLevel;
+    @private NSMutableArray *addedRectangles;
 }
 
 @synthesize permutationCount;
@@ -59,9 +62,11 @@
         self->numberOfRectanglesOnShelf = [NSMutableArray new];
         self->rectanglesPositionsOnShelves = [NSMutableArray array];
         
+        self->addedRectangles = [NSMutableArray new];
         self->bestShelvesHeight = [NSMutableArray new];
         self->bestShelvesUsedWidth = [NSMutableArray new];
         self->bestRectangleCombination = [NSMutableArray new];
+        self->rectanglesPerLevel = [NSMutableDictionary dictionary];
         
         self->storageWidth = width;
         self->storageHeight = height;
@@ -3114,6 +3119,196 @@ NSUInteger (^ffShelfWorstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *,
     return self->numberOfUsedShelves;
 }
 
+// PUBLIC: Bottom-left Bin Packing Algorithm
+- (void) bottomLeftAlgorithm2DForGivenRectangles:(NSMutableArray *)givenRectangles
+{
+    NSMutableArray *availablePoints = [NSMutableArray new];
+    
+    [self->addedRectangles removeAllObjects];
+    [self->rectangles removeAllObjects];
+    [self->rectangles addObjectsFromArray:givenRectangles];
+    
+    for (NSValue *wrappedRectangle in self->rectangles)
+    {
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        if (0 == [addedRectangles count])
+        {
+            // We are adding first rectangle in bottom left position on coordinates (0,0)
+            NSRect rectangleToAdd = CGRectMake(0.0f, 0.0f, rectangle.size.width, rectangle.size.height);
+            NSValue *rectangleToAddWrapped = [NSValue valueWithRect:rectangleToAdd];
+            
+            [self->addedRectangles addObject:rectangleToAddWrapped];
+            
+            // Determine available points as possible locations to add new rectangle
+            NSPoint newAvailablePoint1 = CGPointMake(0.0f + rectangleToAdd.size.width, 0.0f);
+            NSPoint newAvailablePoint2 = CGPointMake(0.0f, 0.0f + rectangleToAdd.size.height);
+            
+            NSValue *newAvailablePoint1Wrapped = [NSValue valueWithPoint:newAvailablePoint1];
+            NSValue *newAvailablePoint2Wrapped = [NSValue valueWithPoint:newAvailablePoint2];
+            
+            [availablePoints addObject:newAvailablePoint1Wrapped];
+            [availablePoints addObject:newAvailablePoint2Wrapped];
+        }
+        else
+        {
+            NSUInteger bestPointIndex = 0;
+            
+            BOOL foundFittingPoint = NO;
+            
+            // Some rectangle(s) already exist(s) in storage
+            for (NSValue *wrappedPoint in availablePoints)
+            {
+                BOOL doesCurrentPointFits = YES;
+                
+                NSPoint point = [wrappedPoint pointValue];
+                
+                if (point.y + rectangle.size.height <= self->storageHeight)
+                {
+                    if (point.x + rectangle.size.width <= self->storageWidth)
+                    {
+                        // Check if it is possible to place rectangle on current location
+                        // (maybe some rectangle placed above or on the right is blocking this rectangle
+                        for (NSValue *wrappedPlacedRectangle in addedRectangles)
+                        {
+                            NSRect placedRectangle = [wrappedPlacedRectangle rectValue];
+                            
+                            if (point.y < placedRectangle.origin.y)
+                            {
+                                if (point.y + rectangle.size.height > placedRectangle.origin.y)
+                                {
+                                    if (placedRectangle.origin.x + placedRectangle.size.width > point.x)
+                                    {
+                                        doesCurrentPointFits = NO;
+                                        break;
+                                    }
+                                }
+                            }
+                                
+                            if (point.y > placedRectangle.origin.y)
+                            {
+                                if (placedRectangle.size.height + placedRectangle.origin.y > point.y)
+                                {
+                                    if (point.x + rectangle.size.width > placedRectangle.origin.x)
+                                    {
+                                        if (point.x < placedRectangle.origin.x)
+                                        {
+                                            doesCurrentPointFits = NO;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        doesCurrentPointFits = NO;
+                    }
+                }
+                else
+                {
+                    doesCurrentPointFits = NO;
+                }
+                
+                if (YES == doesCurrentPointFits)
+                {
+                    foundFittingPoint = YES;
+                    
+                    NSRect addedRectangle = NSMakeRect(point.x, point.y, rectangle.size.width, rectangle.size.height);
+                    NSValue *addedRectangleWrapped = [NSValue valueWithRect:addedRectangle];
+                    
+                    [self->addedRectangles addObject:addedRectangleWrapped];
+                    
+                    [availablePoints removeObjectAtIndex:bestPointIndex];
+                    
+                    // Determine available points as possible locations to add new rectangle
+                    NSPoint newAvailablePoint1 = CGPointMake(addedRectangle.origin.x + addedRectangle.size.width, addedRectangle.origin.y);
+                    NSPoint newAvailablePoint2 = CGPointMake(addedRectangle.origin.x, addedRectangle.origin.y + addedRectangle.size.height);
+                    
+                    NSValue *newAvailablePoint1Wrapped = [NSValue valueWithPoint:newAvailablePoint1];
+                    NSValue *newAvailablePoint2Wrapped = [NSValue valueWithPoint:newAvailablePoint2];
+                
+                    [availablePoints addObject:newAvailablePoint1Wrapped];
+                    [availablePoints addObject:newAvailablePoint2Wrapped];
+                    
+                    [availablePoints sortUsingComparator: ^NSComparisonResult (id obj1, id obj2) 
+                    {  
+                         NSPoint pt1 = [obj1 pointValue];  
+                         NSPoint pt2 = [obj2 pointValue];  
+                         
+                         if (pt1.y > pt2.y)
+                         {
+                             return NSOrderedDescending;
+                         }
+                         else if (pt1.x < pt2.x)
+                         {
+                             return NSOrderedAscending;
+                         }
+                         else
+                         {
+                             return NSOrderedSame;
+                         }
+                     }]; 
+                    
+                    break;
+                }
+                
+                bestPointIndex += 1;
+            }
+            
+            if (NO == foundFittingPoint)
+            {
+                float usedHeight = 0.0f;
+                
+                for (NSValue *addedRectangleWrapped in self->addedRectangles)
+                {
+                    NSRect addedRectangle = [addedRectangleWrapped rectValue];
+                    
+                    if (addedRectangle.origin.y + addedRectangle.size.height > usedHeight)
+                    {
+                        usedHeight = addedRectangle.origin.y + addedRectangle.size.height;
+                    }
+                }
+                
+                NSRect addedRectangle = NSMakeRect(0.0f, usedHeight, rectangle.size.width, rectangle.size.height);
+                NSValue *addedRectangleWrapped = [NSValue valueWithRect:addedRectangle];
+                
+                [self->addedRectangles addObject:addedRectangleWrapped];
+                
+                // Determine available points as possible locations to add new rectangle
+                NSPoint newAvailablePoint1 = CGPointMake(addedRectangle.origin.x + addedRectangle.size.width, addedRectangle.origin.y);
+                NSPoint newAvailablePoint2 = CGPointMake(addedRectangle.origin.x, addedRectangle.origin.y + addedRectangle.size.height);
+                
+                NSValue *newAvailablePoint1Wrapped = [NSValue valueWithPoint:newAvailablePoint1];
+                NSValue *newAvailablePoint2Wrapped = [NSValue valueWithPoint:newAvailablePoint2];
+                
+                [availablePoints addObject:newAvailablePoint1Wrapped];
+                [availablePoints addObject:newAvailablePoint2Wrapped];
+                
+                [availablePoints sortUsingComparator: ^NSComparisonResult (id obj1, id obj2) 
+                 {  
+                     NSPoint pt1 = [obj1 pointValue];  
+                     NSPoint pt2 = [obj2 pointValue];  
+                     
+                     if (pt1.y > pt2.y)
+                     {
+                         return NSOrderedDescending;
+                     }
+                     else if (pt1.x < pt2.x)
+                     {
+                         return NSOrderedAscending;
+                     }
+                     else
+                     {
+                         return NSOrderedSame;
+                     }
+                 }]; 
+            }
+        }
+    }
+}
+
 // PUBLIC: Calculate storage occupacy
 - (void) showStorageUsageDetails
 {
@@ -3129,6 +3324,8 @@ NSUInteger (^ffShelfWorstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *,
         
         storageUsedArea += rectangle.size.width * rectangle.size.height;
     }
+    
+    float estimatedOptimalHeight = ceilf(storageUsedArea / 10);
     
     // Calculate storage used height
     for (NSNumber *height in self->shelvesHeight)
@@ -3148,9 +3345,54 @@ NSUInteger (^ffShelfWorstFitAlgorithm2DFF2) (NSMutableArray *, NSMutableArray *,
     
     // Print report
     NSLog(@"Used storage: %.2f%%", storageUsedArea / storageArea * 100.0f);
-    NSLog(@"Used storage height: %.2f [%.2f%%]", storageUsedHeight, storageUsedHeight / self->storageHeight * 100.0f);
+    NSLog(@"Used storage height: %.2f / %.2f", storageUsedHeight, estimatedOptimalHeight);
     NSLog(@"Number of shelves used: %lu", self->numberOfUsedShelves);
     NSLog(@"Wasted area on shelves: %.2f/%.2f [%.2f%%]", self->wastedArea, self->totalShelvesUsedArea, self->wastedAreaPercentage);
+}
+
+// PUBLIC: Calculate storage occupacy
+- (void) showBottomLeftStorageUsageDetails
+{
+    float shelvesUsedArea = 0.0f;
+    float storageUsedArea = 0.0f;
+    float storageUsedHeight = 0.0f;
+    float storageArea = self->storageWidth * self->storageHeight;
+    
+    // Calculate actual area used by added rectangles
+    for (NSValue *wrappedRectangle in self->addedRectangles)
+    {
+        NSRect rectangle = [wrappedRectangle rectValue];
+        
+        storageUsedArea += rectangle.size.width * rectangle.size.height;
+    }
+    
+    float estimatedOptimalHeight = ceilf(storageUsedArea / 10);
+    
+    // Calculate storage used height
+    for (NSValue *addedRectangleWrapped in self->addedRectangles)
+    {
+        NSRect addedRectangle = [addedRectangleWrapped rectValue];
+        
+        if (addedRectangle.origin.y + addedRectangle.size.height > storageUsedHeight)
+        {
+            storageUsedHeight = addedRectangle.origin.y + addedRectangle.size.height;
+        }
+    }
+    
+    // Calculate shelves used area
+    for (NSNumber *shelfArea in self->currentlyUsedShelfArea)
+    {
+        shelvesUsedArea += [shelfArea floatValue];
+    }
+    
+    self->totalShelvesUsedArea = storageUsedHeight * self->storageWidth;
+    self->wastedArea = storageUsedHeight * self->storageWidth - storageUsedArea;
+    self->wastedAreaPercentage = self->wastedArea / self->totalShelvesUsedArea * 100.0f;
+    
+    // Print report
+    NSLog(@"Used storage: %.2f%%", storageUsedArea / storageArea * 100.0f);
+    NSLog(@"Used storage height: %.2f / %.2f", storageUsedHeight, estimatedOptimalHeight);
+    NSLog(@"Wasted area of used area: %.2f/%.2f [%.2f%%]", self->wastedArea, self->totalShelvesUsedArea, self->wastedAreaPercentage);
 }
 
 // PRIVATE: Calculate wasted area on shelves
