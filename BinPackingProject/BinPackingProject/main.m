@@ -24,26 +24,8 @@ int main(int argc, const char * argv[])
 //        BinPackingFactory1D * binPackingFactory1D = [[BinPackingFactory1D alloc] initWithBinCapacity:1.0f 
 //                                                                                            binLimit:300
 //                                                                                           isLimited:YES];
-//        
-////        [inputItems addObject:[NSNumber numberWithFloat:0.3f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.4f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.2f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.4f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.1f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.25f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.1f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.25f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.1f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.4f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.7f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.4f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.5f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.4f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.3f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.1f]];
-////        [inputItems addObject:[NSNumber numberWithFloat:0.2f]];
-//        
-//        for (NSUInteger i = 0; i < 400; i++)
+//                
+//        for (NSUInteger i = 0; i < 1000; i++)
 //        {
 //            float randomFloat = (float)arc4random() / ARC4RANDOM_MAX;
 //            float roundedFloat = roundf(randomFloat * 100) / 100.0;
@@ -104,15 +86,117 @@ int main(int argc, const char * argv[])
 //        [binPackingFactory1D worstFitDecreasingAlgorithm1DForGivenItems:inputItems];
 //        [binPackingFactory1D showStorageUsageDetails];
 //        NSLog(@"-------------------------------------");
+//
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Detail Search Bin Packing 1D ***");
+//        [binPackingFactory1D detailSearchAlgorithm1DForGivenItems:inputItems];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
+//        
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
+//        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+//                                             numberOfUnitsInGeneration:10 
+//                                                   numberOfGenerations:100 
+//                                              mutationFactorPercentage:5
+//                                                         elitismFactor:2
+//                                               numberOfCrossoverPoints:10 
+//                                              fitnessFunctionSelection:0];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
+//        
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
+//        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+//                                             numberOfUnitsInGeneration:50 
+//                                                   numberOfGenerations:100 
+//                                              mutationFactorPercentage:5
+//                                                         elitismFactor:2
+//                                               numberOfCrossoverPoints:10 
+//                                              fitnessFunctionSelection:0];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
+//        
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
+//        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+//                                             numberOfUnitsInGeneration:200 
+//                                                   numberOfGenerations:100 
+//                                              mutationFactorPercentage:5
+//                                                         elitismFactor:2
+//                                               numberOfCrossoverPoints:10 
+//                                              fitnessFunctionSelection:0];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
+//        
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
+//        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+//                                             numberOfUnitsInGeneration:10 
+//                                                   numberOfGenerations:20 
+//                                              mutationFactorPercentage:5
+//                                                         elitismFactor:2
+//                                               numberOfCrossoverPoints:10 
+//                                              fitnessFunctionSelection:0];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
+//        
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
+//        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+//                                             numberOfUnitsInGeneration:10 
+//                                                   numberOfGenerations:50 
+//                                              mutationFactorPercentage:5
+//                                                         elitismFactor:2
+//                                               numberOfCrossoverPoints:10 
+//                                              fitnessFunctionSelection:0];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
+//        
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
+//        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+//                                             numberOfUnitsInGeneration:10 
+//                                                   numberOfGenerations:200 
+//                                              mutationFactorPercentage:5
+//                                                         elitismFactor:2
+//                                               numberOfCrossoverPoints:10 
+//                                              fitnessFunctionSelection:0];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
 //        
 //        NSLog(@"-------------------------------------");
 //        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
 //        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
 //                                             numberOfUnitsInGeneration:20 
-//                                                   numberOfGenerations:200 
+//                                                   numberOfGenerations:50 
 //                                              mutationFactorPercentage:5
-//                                                         elitismFactor:4 
-//                                               numberOfCrossoverPoints:7 
+//                                                         elitismFactor:1
+//                                               numberOfCrossoverPoints:10 
+//                                              fitnessFunctionSelection:0];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
+//        
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
+//        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+//                                             numberOfUnitsInGeneration:20 
+//                                                   numberOfGenerations:50 
+//                                              mutationFactorPercentage:5
+//                                                         elitismFactor:3
+//                                               numberOfCrossoverPoints:10 
+//                                              fitnessFunctionSelection:0];
+//        [binPackingFactory1D showStorageUsageDetails];
+//        NSLog(@"-------------------------------------");
+//        
+//        NSLog(@"-------------------------------------");
+//        NSLog(@"*** Genetic Algorithm (FF: Next Fit) Bin Packing 1D ***");
+//        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
+//                                             numberOfUnitsInGeneration:20 
+//                                                   numberOfGenerations:50 
+//                                              mutationFactorPercentage:5
+//                                                         elitismFactor:5
+//                                               numberOfCrossoverPoints:10 
 //                                              fitnessFunctionSelection:0];
 //        [binPackingFactory1D showStorageUsageDetails];
 //        NSLog(@"-------------------------------------");
@@ -120,11 +204,11 @@ int main(int argc, const char * argv[])
 //        NSLog(@"-------------------------------------");
 //        NSLog(@"*** Genetic Algorithm (FF: First Fit) Bin Packing 1D ***");
 //        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
-//                                             numberOfUnitsInGeneration:20 
+//                                             numberOfUnitsInGeneration:40 
 //                                                   numberOfGenerations:200 
 //                                              mutationFactorPercentage:5
-//                                                         elitismFactor:4 
-//                                               numberOfCrossoverPoints:7 
+//                                                         elitismFactor:2 
+//                                               numberOfCrossoverPoints:10 
 //                                              fitnessFunctionSelection:1];
 //        [binPackingFactory1D showStorageUsageDetails];
 //        NSLog(@"-------------------------------------");
@@ -132,11 +216,11 @@ int main(int argc, const char * argv[])
 //        NSLog(@"-------------------------------------");
 //        NSLog(@"*** Genetic Algorithm (FF: Best Fit) Bin Packing 1D ***");
 //        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
-//                                             numberOfUnitsInGeneration:20 
+//                                             numberOfUnitsInGeneration:40 
 //                                                   numberOfGenerations:200 
 //                                              mutationFactorPercentage:5
-//                                                         elitismFactor:4 
-//                                               numberOfCrossoverPoints:7 
+//                                                         elitismFactor:2
+//                                               numberOfCrossoverPoints:10 
 //                                              fitnessFunctionSelection:2];
 //        [binPackingFactory1D showStorageUsageDetails];
 //        NSLog(@"-------------------------------------");
@@ -144,11 +228,11 @@ int main(int argc, const char * argv[])
 //        NSLog(@"-------------------------------------");
 //        NSLog(@"*** Genetic Algorithm (FF: Worst Fit) Bin Packing 1D ***");
 //        [binPackingFactory1D searchWithUsageOfGeneticAlgorithmForItems:inputItems 
-//                                             numberOfUnitsInGeneration:20 
+//                                             numberOfUnitsInGeneration:40 
 //                                                   numberOfGenerations:200 
 //                                              mutationFactorPercentage:5
-//                                                         elitismFactor:4 
-//                                               numberOfCrossoverPoints:7 
+//                                                         elitismFactor:2
+//                                               numberOfCrossoverPoints:10 
 //                                              fitnessFunctionSelection:3];
 //        [binPackingFactory1D showStorageUsageDetails];
 //        NSLog(@"-------------------------------------");
@@ -164,34 +248,7 @@ int main(int argc, const char * argv[])
 //        // Test for BinPackingFactory2D
 //        NSMutableArray *inputRectangles = [NSMutableArray new];
 //        
-//        NSRect rectangle1 = NSMakeRect(0.0f, 0.0f, 4.0f, 4.0f);
-//        NSRect rectangle2 = NSMakeRect(0.0f, 0.0f, 4.0f, 2.0f);
-//        NSRect rectangle3 = NSMakeRect(0.0f, 0.0f, 8.0f, 3.0f);
-//        NSRect rectangle4 = NSMakeRect(0.0f, 0.0f, 7.0f, 1.0f);
-//        NSRect rectangle5 = NSMakeRect(0.0f, 0.0f, 6.0f, 6.0f);
-//        NSRect rectangle6 = NSMakeRect(0.0f, 0.0f, 2.0f, 3.0f);
-//        NSRect rectangle7 = NSMakeRect(0.0f, 0.0f, 3.0f, 2.0f);
-//        NSRect rectangle8 = NSMakeRect(0.0f, 0.0f, 4.0f, 3.0f);
-//        
-////        NSRect rectangle1 = NSMakeRect(0.0f, 0.0f, 4.0f, 4.0f);
-////        NSRect rectangle2 = NSMakeRect(0.0f, 0.0f, 4.0f, 2.0f);
-////        NSRect rectangle3 = NSMakeRect(0.0f, 0.0f, 7.0f, 1.0f);
-////        NSRect rectangle4 = NSMakeRect(0.0f, 0.0f, 4.0f, 3.0f);
-////        NSRect rectangle5 = NSMakeRect(0.0f, 0.0f, 2.0f, 3.0f);
-////        NSRect rectangle6 = NSMakeRect(0.0f, 0.0f, 3.0f, 2.0f);
-////        NSRect rectangle7 = NSMakeRect(0.0f, 0.0f, 6.0f, 6.0f);
-////        NSRect rectangle8 = NSMakeRect(0.0f, 0.0f, 8.0f, 3.0f);
-//        
-//        [inputRectangles addObject:[NSValue valueWithRect:rectangle1]];
-//        [inputRectangles addObject:[NSValue valueWithRect:rectangle2]];
-//        [inputRectangles addObject:[NSValue valueWithRect:rectangle3]];
-//        [inputRectangles addObject:[NSValue valueWithRect:rectangle4]];
-//        [inputRectangles addObject:[NSValue valueWithRect:rectangle5]];
-//        [inputRectangles addObject:[NSValue valueWithRect:rectangle6]];
-//        [inputRectangles addObject:[NSValue valueWithRect:rectangle7]];
-//        [inputRectangles addObject:[NSValue valueWithRect:rectangle8]];
-//        
-//        for (NSUInteger i = 0; i < 100; i++)
+//        for (NSUInteger i = 0; i < 400; i++)
 //        {
 //            float width;
 //            float height;
@@ -210,9 +267,8 @@ int main(int argc, const char * argv[])
 //
 //        
 //        BinPackingFactory2D *binPackingFactory2D = [[BinPackingFactory2D alloc] initWithStorageWidth:10 
-//                                                                                       storageHeight:400 
+//                                                                                       storageHeight:2500 
 //                                                                                storageHeightLimited:NO];
-//        
 //        
 //        NSLog(@"-------------------------------------");
 //        NSLog(@"*** Shelf Next Fit Bin Packing 2D ***");
@@ -272,10 +328,10 @@ int main(int argc, const char * argv[])
 //        NSLog(@"*** Shelf Genetic Algorithm (FF: Next Fit) Bin Packing 2D ***");
 //        [binPackingFactory2D searchWithUsageOfGeneticAlgorithmForRectangles:inputRectangles 
 //                                                  numberOfUnitsInGeneration:20 
-//                                                        numberOfGenerations:200 
+//                                                        numberOfGenerations:100 
 //                                                   mutationFactorPercentage:5
 //                                                              elitismFactor:2 
-//                                                    numberOfCrossoverPoints:3 
+//                                                    numberOfCrossoverPoints:10
 //                                                   fitnessFunctionSelection:0];
 //        NSLog(@"-------------------------------------");
 //        
@@ -283,10 +339,10 @@ int main(int argc, const char * argv[])
 //        NSLog(@"*** Shelf Genetic Algorithm (FF: First Fit) Bin Packing 2D ***");
 //        [binPackingFactory2D searchWithUsageOfGeneticAlgorithmForRectangles:inputRectangles 
 //                                                  numberOfUnitsInGeneration:20 
-//                                                        numberOfGenerations:200 
+//                                                        numberOfGenerations:100 
 //                                                   mutationFactorPercentage:5
 //                                                              elitismFactor:2 
-//                                                    numberOfCrossoverPoints:3 
+//                                                    numberOfCrossoverPoints:10
 //                                                   fitnessFunctionSelection:1];
 //        NSLog(@"-------------------------------------");
 //        
@@ -294,10 +350,10 @@ int main(int argc, const char * argv[])
 //        NSLog(@"*** Shelf Genetic Algorithm (FF: Best Fit) Bin Packing 2D ***");
 //        [binPackingFactory2D searchWithUsageOfGeneticAlgorithmForRectangles:inputRectangles 
 //                                                  numberOfUnitsInGeneration:20 
-//                                                        numberOfGenerations:200 
+//                                                        numberOfGenerations:100 
 //                                                   mutationFactorPercentage:5
-//                                                              elitismFactor:2 
-//                                                    numberOfCrossoverPoints:3 
+//                                                              elitismFactor:2
+//                                                    numberOfCrossoverPoints:10 
 //                                                   fitnessFunctionSelection:2];
 //        NSLog(@"-------------------------------------");
 //        
@@ -305,10 +361,10 @@ int main(int argc, const char * argv[])
 //        NSLog(@"*** Shelf Genetic Algorithm (FF: Worst Fit) Bin Packing 2D ***");
 //        [binPackingFactory2D searchWithUsageOfGeneticAlgorithmForRectangles:inputRectangles 
 //                                                  numberOfUnitsInGeneration:20 
-//                                                        numberOfGenerations:200 
+//                                                        numberOfGenerations:100 
 //                                                   mutationFactorPercentage:5
 //                                                              elitismFactor:2 
-//                                                    numberOfCrossoverPoints:3 
+//                                                    numberOfCrossoverPoints:10 
 //                                                   fitnessFunctionSelection:3];
 //        NSLog(@"-------------------------------------");
 //        
@@ -345,7 +401,7 @@ int main(int argc, const char * argv[])
 //        [inputBoxes addObject:box11];
 //        [inputBoxes addObject:box12];
         
-        for (NSUInteger i = 0; i < 70; i++)
+        for (NSUInteger i = 0; i < 100; i++)
         {
             float width;
             float length;
@@ -367,7 +423,7 @@ int main(int argc, const char * argv[])
         
         BinPackingFactory3D *binPackingFactory3D = [[BinPackingFactory3D alloc] initWithStorageWidth:10 
                                                                                        storageLength:10 
-                                                                                       storageHeight:300];
+                                                                                       storageHeight:500];
         
         NSLog(@"-------------------------------------");
         NSLog(@"*** Next Fit Bin Packing 3D ***");

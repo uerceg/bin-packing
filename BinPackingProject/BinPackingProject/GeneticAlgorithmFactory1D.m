@@ -284,7 +284,10 @@
 // PUBLIC: Method which mutates unit with certain percentage of probability
 - (void) mutate:(NSUInteger)mutationFactorPercentage
 {
-    for (NSMutableArray *unit in self->newGeneration)
+    NSMutableArray *newGenerationHelp = [NSMutableArray arrayWithArray:self->newGeneration];
+    [self->newGeneration removeAllObjects];
+    
+    for (NSMutableArray *unit in newGenerationHelp)
     {
         NSUInteger randomNumber = arc4random_uniform(100);
         
@@ -293,20 +296,26 @@
             // Do the mutation
             NSUInteger randomIndexOne;
             NSUInteger randomIndexTwo;
+            NSUInteger mutateLoopLimit = self->numberOfItemsInUnit * 0.2f;
             
-            do
+            for (NSUInteger i = 0; i < mutateLoopLimit; i++)
             {
-                randomIndexOne = arc4random_uniform(self->numberOfItemsInUnit);
-                randomIndexTwo = arc4random_uniform(self->numberOfItemsInUnit);
+                do
+                {
+                    randomIndexOne = arc4random_uniform(self->numberOfItemsInUnit);
+                    randomIndexTwo = arc4random_uniform(self->numberOfItemsInUnit);
+                    
+                } while (randomIndexOne == randomIndexTwo);
                 
-            } while (randomIndexOne == randomIndexTwo);
-            
-            NSNumber *firstItem = [unit objectAtIndex:(NSUInteger)randomIndexOne];
-            NSNumber *secondItem = [unit objectAtIndex:(NSUInteger)randomIndexTwo];
-            
-            [unit replaceObjectAtIndex:(NSUInteger)randomIndexOne withObject:secondItem];
-            [unit replaceObjectAtIndex:(NSUInteger)randomIndexTwo withObject:firstItem];
+                NSNumber *firstItem = [unit objectAtIndex:(NSUInteger)randomIndexOne];
+                NSNumber *secondItem = [unit objectAtIndex:(NSUInteger)randomIndexTwo];
+                
+                [unit replaceObjectAtIndex:(NSUInteger)randomIndexOne withObject:secondItem];
+                [unit replaceObjectAtIndex:(NSUInteger)randomIndexTwo withObject:firstItem];
+            }
         }
+        
+        [self->newGeneration addObject:unit];
     }
 }
 

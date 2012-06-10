@@ -293,7 +293,10 @@
 // PUBLIC: Method which mutates unit with certain percentage of probability
 - (void) mutate:(NSUInteger)mutationFactorPercentage
 {
-    for (NSMutableArray *unit in self->newGeneration)
+    NSMutableArray *newGenerationHelp = [NSMutableArray arrayWithArray:self->newGeneration];
+    [self->newGeneration removeAllObjects];
+    
+    for (NSMutableArray *unit in newGenerationHelp)
     {
         NSUInteger randomNumber = arc4random_uniform(100);
         
@@ -302,21 +305,28 @@
             // Do the mutation
             NSUInteger randomIndexOne;
             NSUInteger randomIndexTwo;
+            NSUInteger mutateLoopLimit = self->numberOfRectanglesInUnit * 0.2f;
             
-            do
+            for (NSUInteger i = 0; i < mutateLoopLimit; i++)
             {
-                randomIndexOne = arc4random_uniform(self->numberOfRectanglesInUnit);
-                randomIndexTwo = arc4random_uniform(self->numberOfRectanglesInUnit);
+                do
+                {
+                    randomIndexOne = arc4random_uniform(self->numberOfRectanglesInUnit);
+                    randomIndexTwo = arc4random_uniform(self->numberOfRectanglesInUnit);
+                    
+                } while (randomIndexOne == randomIndexTwo);
                 
-            } while (randomIndexOne == randomIndexTwo);
-            
-            NSValue *firstRectangle = [unit objectAtIndex:(NSUInteger)randomIndexOne];
-            NSValue *secondRectangle = [unit objectAtIndex:(NSUInteger)randomIndexTwo];
-            
-            [unit replaceObjectAtIndex:(NSUInteger)randomIndexOne withObject:secondRectangle];
-            [unit replaceObjectAtIndex:(NSUInteger)randomIndexTwo withObject:firstRectangle];
+                NSValue *firstRectangle = [unit objectAtIndex:(NSUInteger)randomIndexOne];
+                NSValue *secondRectangle = [unit objectAtIndex:(NSUInteger)randomIndexTwo];
+                
+                [unit replaceObjectAtIndex:(NSUInteger)randomIndexOne withObject:secondRectangle];
+                [unit replaceObjectAtIndex:(NSUInteger)randomIndexTwo withObject:firstRectangle];
+            }
         }
+        
+        [self->newGeneration addObject:unit];
     }
+
 }
 
 // PUBLIC: Method which swaps newly created generation to become current generation

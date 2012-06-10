@@ -294,7 +294,10 @@
 // PUBLIC: Method which mutates unit with certain percentage of probability
 - (void) mutate:(NSUInteger)mutationFactorPercentage
 {
-    for (NSMutableArray *unit in self->newGeneration)
+    NSMutableArray *newGenerationHelp = [NSMutableArray arrayWithArray:self->newGeneration];
+    [self->newGeneration removeAllObjects];
+    
+    for (NSMutableArray *unit in newGenerationHelp)
     {
         NSUInteger randomNumber = arc4random_uniform(100);
         
@@ -303,21 +306,28 @@
             // Do the mutation
             NSUInteger randomIndexOne;
             NSUInteger randomIndexTwo;
+            NSUInteger mutateLoopLimit = self->numberOfBoxesInUnit * 0.2f;
             
-            do
+            for (NSUInteger i = 0; i < mutateLoopLimit; i++)
             {
-                randomIndexOne = arc4random_uniform(self->numberOfBoxesInUnit);
-                randomIndexTwo = arc4random_uniform(self->numberOfBoxesInUnit);
+                do
+                {
+                    randomIndexOne = arc4random_uniform(self->numberOfBoxesInUnit);
+                    randomIndexTwo = arc4random_uniform(self->numberOfBoxesInUnit);
+                    
+                } while (randomIndexOne == randomIndexTwo);
                 
-            } while (randomIndexOne == randomIndexTwo);
-            
-            NSValue *firstBox = [unit objectAtIndex:(NSUInteger)randomIndexOne];
-            NSValue *secondBox = [unit objectAtIndex:(NSUInteger)randomIndexTwo];
-            
-            [unit replaceObjectAtIndex:(NSUInteger)randomIndexOne withObject:secondBox];
-            [unit replaceObjectAtIndex:(NSUInteger)randomIndexTwo withObject:firstBox];
+                Box *firstBox = [unit objectAtIndex:(NSUInteger)randomIndexOne];
+                Box *secondBox = [unit objectAtIndex:(NSUInteger)randomIndexTwo];
+                
+                [unit replaceObjectAtIndex:(NSUInteger)randomIndexOne withObject:secondBox];
+                [unit replaceObjectAtIndex:(NSUInteger)randomIndexTwo withObject:firstBox];
+            }
         }
+        
+        [self->newGeneration addObject:unit];
     }
+
 }
 
 // PUBLIC: Method which swaps newly created generation to become current generation

@@ -971,6 +971,9 @@ NSUInteger (^ffWorstFitAlgorithm1DFF2) (NSMutableArray *, NSMutableArray *) = ^(
                                  numberOfCrossoverPoints:(NSUInteger)crossoverPoints 
                                 fitnessFunctionSelection:(NSUInteger)choice
 {
+    [self->items removeAllObjects];
+    [self->items addObjectsFromArray:bpItems];
+    
     // Initialize GA factory object
     NSUInteger currentNumberOfGenerations = 0;
     GeneticAlgorithmFactory1D *gaFactory = [[GeneticAlgorithmFactory1D alloc] initWithNumberOfUnitsInGeneration:unitNumber 
